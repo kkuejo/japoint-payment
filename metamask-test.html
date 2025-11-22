@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaMask接続テスト</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+        }
+        .success {
+            background: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .detail {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 MetaMask接続テスト</h1>
+
+        <div id="checkResults"></div>
+
+        <button onclick="testConnection()">接続テスト実行</button>
+
+        <div style="margin-top: 20px; font-size: 12px; color: #666;">
+            このページはMetaMaskの接続診断専用です。<br>
+            問題を特定するための情報を表示します。
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" integrity="sha512-FdTWHTTUDQsMZBfLpc6y5XPkTG1U5mbN7wfeEApzRB2N5l09XxQVBHT3LcqIULJqCYKPjdB8fJQPiDSgDjGKXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script>
+        function addStatus(message, type, details = null) {
+            const div = document.createElement('div');
+            div.className = 'status ' + type;
+            div.innerHTML = message;
+
+            if (details) {
+                const detailDiv = document.createElement('div');
+                detailDiv.className = 'detail';
+                detailDiv.textContent = details;
+                div.appendChild(detailDiv);
+            }
+
+            document.getElementById('checkResults').appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('checkResults').innerHTML = '';
+        }
+
+        async function testConnection() {
+            clearResults();
+
+            addStatus('🔄 テスト開始...', 'info');
+
+            // Test 1: Check ethers.js
+            if (typeof ethers === 'undefined') {
+                addStatus('❌ ethers.jsが読み込まれていません', 'error');
+                addStatus('💡 解決策: ページを再読み込みしてください', 'info');
+                return;
+            } else {
+                addStatus('✅ ethers.js読み込み成功', 'success', 'Version: ' + ethers.version);
+            }
+
+            // Test 2: Check window.ethereum
+            if (typeof window.ethereum === 'undefined') {
+                addStatus('❌ window.ethereumが見つかりません', 'error');
+                addStatus('💡 解決策: MetaMask Mobileアプリ内のブラウザで開いてください', 'info');
+                return;
+            } else {
+                addStatus('✅ window.ethereum検出成功', 'success');
+            }
+
+            // Test 3: Check if MetaMask
+            if (window.ethereum.isMetaMask) {
+                addStatus('✅ MetaMaskを検出', 'success');
+            } else {
+                addStatus('⚠️ MetaMask以外のウォレットの可能性', 'error', 'isMetaMask: ' + window.ethereum.isMetaMask);
+            }
+
+            // Test 4: Try to connect
+            try {
+                addStatus('🔄 MetaMaskに接続試行中...', 'info');
+
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+
+                const signer = provider.getSigner();
+                const address = await signer.getAddress();
+
+                addStatus('✅ MetaMask接続成功！', 'success', 'アドレス: ' + address);
+
+                // Test 5: Check network
+                const network = await provider.getNetwork();
+                if (network.chainId === 11155111) {
+                    addStatus('✅ Sepoliaテストネットに接続', 'success', 'Chain ID: ' + network.chainId);
+                } else {
+                    addStatus('⚠️ ネットワークがSepoliaではありません', 'error', 'Chain ID: ' + network.chainId + ' (Sepoliaは11155111)');
+                    addStatus('💡 解決策: MetaMaskでSepoliaネットワークに切り替えてください', 'info');
+                }
+
+                // Test 6: Check balance
+                const balance = await provider.getBalance(address);
+                addStatus('✅ ETH残高取得成功', 'success', ethers.utils.formatEther(balance) + ' ETH');
+
+                addStatus('🎉 すべてのテストに合格しました！', 'success');
+                addStatus('💡 決済ページでも接続できるはずです。それでもできない場合は、URLパラメータの問題かもしれません。', 'info');
+
+            } catch (error) {
+                addStatus('❌ 接続エラー', 'error', 'エラー: ' + error.message);
+
+                if (error.code === 4001) {
+                    addStatus('💡 ユーザーが接続をキャンセルしました', 'info');
+                } else if (error.message.includes('eth_requestAccounts')) {
+                    addStatus('💡 MetaMaskの許可リクエストに問題があります', 'info');
+                }
+            }
+        }
+
+        // Auto-run test on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addStatus('📱 ページ読み込み完了', 'info');
+                addStatus('👆 「接続テスト実行」ボタンをタップしてください', 'info');
+            }, 500);
+        });
+    </script>
+</body>
+</html>
