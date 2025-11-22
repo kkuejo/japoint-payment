@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAPOINT QRコード生成</title>
+    <script src="https://unpkg.com/qrcode@1.4.4/build/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .section h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .qr-display {
+            text-align: center;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            border: 2px dashed #ddd;
+        }
+
+        #qrcode {
+            margin: 20px auto;
+        }
+
+        .url-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .success-box {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .example {
+            background: #f1f3f4;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 JAPOINT 決済 QRコード生成</h1>
+        <p class="subtitle">モバイル決済用のQRコードを簡単に生成</p>
+
+        <div class="info-box">
+            <strong>💡 使い方</strong><br>
+            1. デプロイしたコントラクトのアドレスを入力<br>
+            2. ショップ情報と手数料率を選択<br>
+            3. QRコードを生成して印刷・表示
+        </div>
+
+        <div class="section no-print">
+            <h2>1. コントラクト設定</h2>
+
+            <div class="form-group">
+                <label>Base URL（決済ページのURL）</label>
+                <input type="text" id="baseUrl" placeholder="https://example.com/mobile-payment.html">
+                <div class="example">
+                    例: https://yourdomain.com/mobile-payment.html<br>
+                    ローカルテスト: file:///path/to/mobile-payment.html
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>JPYDトークンアドレス</label>
+                <input type="text" id="jpydAddress" placeholder="0x...">
+            </div>
+
+            <div class="form-group">
+                <label>JPYDWrapperアドレス</label>
+                <input type="text" id="wrapperAddress" placeholder="0x...">
+            </div>
+
+            <div class="form-group">
+                <label>Transfer10アドレス</label>
+                <input type="text" id="transfer10Address" placeholder="0x...">
+            </div>
+
+            <div class="form-group">
+                <label>Transfer5アドレス</label>
+                <input type="text" id="transfer5Address" placeholder="0x...">
+            </div>
+
+            <div class="form-group">
+                <label>JAPTトークンアドレス（オプション）</label>
+                <input type="text" id="japtAddress" placeholder="0x...">
+            </div>
+
+            <button onclick="saveConfig()">設定を保存</button>
+        </div>
+
+        <div class="section no-print">
+            <h2>2. ショップ情報</h2>
+
+            <div class="form-group">
+                <label>ショップ名</label>
+                <input type="text" id="shopName" placeholder="例: カフェ山田" value="テストショップ">
+            </div>
+
+            <div class="form-group">
+                <label>手数料率を選択</label>
+                <select id="contractType">
+                    <option value="transfer10">Transfer10 (1%手数料 - 99%ショップ受取)</option>
+                    <option value="transfer5">Transfer5 (0.5%手数料 - 99.5%ショップ受取)</option>
+                </select>
+            </div>
+
+            <button onclick="generateQR()">🎨 QRコードを生成</button>
+        </div>
+
+        <div id="qrSection" style="display: none;">
+            <div class="section qr-display">
+                <h2 id="displayShopName">ショップ名</h2>
+                <p id="displayFeeRate" style="color: #666; margin-bottom: 20px;"></p>
+
+                <div id="qrcode"></div>
+
+                <div class="success-box">
+                    ✅ QRコード生成完了！<br>
+                    お客様にこのQRコードをスキャンしてもらってください
+                </div>
+
+                <div class="url-display" id="urlDisplay"></div>
+
+                <div class="button-group no-print">
+                    <button onclick="downloadQR()">💾 画像をダウンロード</button>
+                    <button onclick="printQR()">🖨️ 印刷</button>
+                    <button onclick="copyUrl()">📋 URLをコピー</button>
+                </div>
+            </div>
+
+            <div class="section no-print">
+                <h2>📱 テスト手順</h2>
+                <ol>
+                    <li>スマートフォンのMetaMask Mobileアプリを開く</li>
+                    <li>ブラウザタブでこのQRコードをスキャン、またはURLを直接開く</li>
+                    <li>「MetaMaskで接続」をタップ</li>
+                    <li>金額を入力して「支払う」をタップ</li>
+                    <li>署名を承認（1回のみ）</li>
+                    <li>✅ 完了！JAPTポイントが自動付与されます</li>
+                </ol>
+            </div>
+
+            <div class="warning-box no-print">
+                <strong>⚠️ 本番環境での注意</strong><br>
+                • Base URLは必ずHTTPS（SSL）を使用してください<br>
+                • コントラクトアドレスは必ず複数回確認してください<br>
+                • テストネットで十分にテストしてから本番環境にデプロイしてください
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load saved config
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('qrConfig');
+            if (saved) {
+                const config = JSON.parse(saved);
+                document.getElementById('baseUrl').value = config.baseUrl || '';
+                document.getElementById('jpydAddress').value = config.jpydAddress || '';
+                document.getElementById('wrapperAddress').value = config.wrapperAddress || '';
+                document.getElementById('transfer10Address').value = config.transfer10Address || '';
+                document.getElementById('transfer5Address').value = config.transfer5Address || '';
+                document.getElementById('japtAddress').value = config.japtAddress || '';
+            }
+        });
+
+        function saveConfig() {
+            const config = {
+                baseUrl: document.getElementById('baseUrl').value,
+                jpydAddress: document.getElementById('jpydAddress').value,
+                wrapperAddress: document.getElementById('wrapperAddress').value,
+                transfer10Address: document.getElementById('transfer10Address').value,
+                transfer5Address: document.getElementById('transfer5Address').value,
+                japtAddress: document.getElementById('japtAddress').value
+            };
+
+            localStorage.setItem('qrConfig', JSON.stringify(config));
+            alert('✅ 設定を保存しました！');
+        }
+
+        let currentUrl = '';
+
+        function generateQR() {
+            // Clear previous QR code
+            document.getElementById('qrcode').innerHTML = '';
+
+            // Get config
+            const baseUrl = document.getElementById('baseUrl').value;
+            const jpydAddress = document.getElementById('jpydAddress').value;
+            const wrapperAddress = document.getElementById('wrapperAddress').value;
+            const transfer10Address = document.getElementById('transfer10Address').value;
+            const transfer5Address = document.getElementById('transfer5Address').value;
+            const japtAddress = document.getElementById('japtAddress').value;
+            const shopName = document.getElementById('shopName').value;
+            const contractType = document.getElementById('contractType').value;
+
+            // Validation
+            if (!baseUrl || !jpydAddress || !wrapperAddress) {
+                alert('Base URL、JPYD、JPYDWrapperのアドレスは必須です');
+                return;
+            }
+
+            const targetAddress = contractType === 'transfer10' ? transfer10Address : transfer5Address;
+            if (!targetAddress) {
+                alert('選択した手数料率のコントラクトアドレスを入力してください');
+                return;
+            }
+
+            // Build URL
+            const params = new URLSearchParams({
+                shop: shopName,
+                type: contractType,
+                jpyd: jpydAddress,
+                wrapper: wrapperAddress,
+                target: targetAddress
+            });
+
+            if (japtAddress) {
+                params.append('japt', japtAddress);
+            }
+
+            currentUrl = `${baseUrl}?${params.toString()}`;
+
+            // Display info
+            document.getElementById('displayShopName').textContent = shopName;
+            const feeRate = contractType === 'transfer5' ? '0.5%' : '1%';
+            document.getElementById('displayFeeRate').textContent = `手数料率: ${feeRate}`;
+            document.getElementById('urlDisplay').textContent = currentUrl;
+
+            // Generate QR code
+            QRCode.toCanvas(
+                document.getElementById('qrcode'),
+                currentUrl,
+                {
+                    width: 300,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                },
+                function (error) {
+                    if (error) {
+                        console.error(error);
+                        alert('QRコード生成エラー: ' + error);
+                    }
+                }
+            );
+
+            // Show QR section
+            document.getElementById('qrSection').style.display = 'block';
+            document.getElementById('qrSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function downloadQR() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) {
+                alert('QRコードが生成されていません');
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.download = `japoint-qr-${document.getElementById('shopName').value}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function printQR() {
+            window.print();
+        }
+
+        function copyUrl() {
+            navigator.clipboard.writeText(currentUrl).then(() => {
+                alert('✅ URLをクリップボードにコピーしました！');
+            }).catch(err => {
+                alert('コピーに失敗しました: ' + err);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAPOINT 決済システム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-decoration: none;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .card-description {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .info-item-icon {
+            font-size: 24px;
+            margin-right: 15px;
+        }
+
+        .info-item-text {
+            flex: 1;
+        }
+
+        .info-item-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .info-item-value {
+            font-family: monospace;
+            font-size: 11px;
+            color: #333;
+            word-break: break-all;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 JAPOINT 決済システム</h1>
+        <p class="subtitle">モバイル対応のスマート決済システム</p>
+
+        <div class="info-box">
+            <h2><span class="status-indicator"></span>サーバー稼働中</h2>
+            <div class="info-item">
+                <div class="info-item-icon">🌐</div>
+                <div class="info-item-text">
+                    <div class="info-item-label">ローカルURL</div>
+                    <div class="info-item-value">http://localhost:8080</div>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-item-icon">📱</div>
+                <div class="info-item-text">
+                    <div class="info-item-label">ネットワークURL（スマホからアクセス）</div>
+                    <div class="info-item-value" id="networkUrl">http://172.21.220.239:8080</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-grid">
+            <a href="qr-codes-display.html" class="card">
+                <div class="card-icon">📱</div>
+                <div class="card-title">QRコード表示</div>
+                <div class="card-description">Transfer5/10のQRコードを表示・ダウンロード</div>
+            </a>
+
+            <a href="frontend-example.html" class="card">
+                <div class="card-icon">💻</div>
+                <div class="card-title">PC版決済</div>
+                <div class="card-description">デスクトップ用インターフェース</div>
+            </a>
+
+            <a href="qr-generator.html" class="card">
+                <div class="card-icon">🎨</div>
+                <div class="card-title">QR生成ツール</div>
+                <div class="card-description">カスタムQRコードを作成</div>
+            </a>
+
+            <a href="MOBILE_PAYMENT_GUIDE.md" class="card" target="_blank">
+                <div class="card-icon">📚</div>
+                <div class="card-title">使い方ガイド</div>
+                <div class="card-description">詳細なドキュメント</div>
+            </a>
+        </div>
+
+        <div class="info-box">
+            <h2>🚀 クイックスタート</h2>
+            <ol style="padding-left: 20px; color: #333;">
+                <li style="margin-bottom: 10px;"><strong>Anvilを起動:</strong> <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">anvil</code></li>
+                <li style="margin-bottom: 10px;"><strong>MetaMask Mobileでネットワーク設定:</strong>
+                    <ul style="margin-top: 5px; padding-left: 20px;">
+                        <li>RPC URL: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;" id="rpcUrl">http://172.21.220.239:8545</code></li>
+                        <li>Chain ID: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">31337</code></li>
+                    </ul>
+                </li>
+                <li style="margin-bottom: 10px;"><strong>QRコードをスキャン</strong>して決済テスト！</li>
+            </ol>
+        </div>
+
+        <div class="footer">
+            <p>🔒 Powered by JAPOINT - モバイル決済システム</p>
+            <p style="margin-top: 10px; font-size: 12px;">
+                コントラクトアドレス (Anvil Local Network)
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-detect network URL
+        window.addEventListener('load', () => {
+            const networkUrl = window.location.origin;
+            document.getElementById('networkUrl').textContent = networkUrl;
+            document.getElementById('rpcUrl').textContent = networkUrl.replace('8080', '8545');
+        });
+    </script>
+</body>
+</html>

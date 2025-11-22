@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JAPOINT 決済</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .shop-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .shop-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .fee-info {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .amount-section {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 24px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .breakdown {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        .breakdown-row.total {
+            border-top: 2px solid #ddd;
+            padding-top: 10px;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .reward {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .pay-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .pay-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .pay-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .connect-button {
+            background: #FF6B35;
+            color: white;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .wallet-info {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            text-align: center;
+            color: #856404;
+        }
+
+        .balance-info {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .balance-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .balance-amount {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💳 JAPOINT 決済</h1>
+        <p class="subtitle">1回の承認で完了！</p>
+
+        <div id="shopInfo" class="shop-info">
+            <div class="shop-name" id="shopName">ショップ名</div>
+            <div class="fee-info">手数料率: <span id="feeRate">-</span></div>
+        </div>
+
+        <div id="walletSection">
+            <button class="connect-button" onclick="connectWallet()">
+                📱 MetaMaskで接続
+            </button>
+            <div class="wallet-info">
+                MetaMask Mobileのブラウザで開いてください
+            </div>
+        </div>
+
+        <div id="paymentSection" class="hidden">
+            <div class="balance-info" id="balanceInfo"></div>
+
+            <div class="amount-section">
+                <label for="amount">支払い金額（JPYD）</label>
+                <input
+                    type="number"
+                    id="amount"
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                    oninput="updateBreakdown()"
+                >
+            </div>
+
+            <div class="breakdown" id="breakdown">
+                <div class="breakdown-row">
+                    <span>お支払い額:</span>
+                    <span id="totalAmount">0 JPYD</span>
+                </div>
+                <div class="breakdown-row">
+                    <span>ショップ受取額:</span>
+                    <span id="shopAmount">0 JPYD</span>
+                </div>
+                <div class="breakdown-row">
+                    <span>手数料:</span>
+                    <span id="feeAmount">0 JPYD</span>
+                </div>
+                <div class="breakdown-row total reward">
+                    <span>🎁 獲得ポイント:</span>
+                    <span id="rewardAmount">0 JAPT</span>
+                </div>
+            </div>
+
+            <button class="pay-button" id="payButton" onclick="pay()" disabled>
+                支払う
+            </button>
+
+            <div id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        // URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const config = {
+            shopName: urlParams.get('shop') || 'テストショップ',
+            contractType: urlParams.get('type') || 'transfer10', // transfer10 or transfer5
+            jpydAddress: urlParams.get('jpyd'),
+            wrapperAddress: urlParams.get('wrapper'),
+            targetAddress: urlParams.get('target'),
+            japtAddress: urlParams.get('japt')
+        };
+
+        // ABIs
+        const JPYD_ABI = [
+            "function balanceOf(address account) external view returns (uint256)",
+            "function nonces(address owner) external view returns (uint256)",
+            "function DOMAIN_SEPARATOR() external view returns (bytes32)"
+        ];
+
+        const WRAPPER_ABI = [
+            "function transferWithPermit(address to, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external returns (bool)"
+        ];
+
+        const JAPT_ABI = [
+            "function balanceOf(address account) external view returns (uint256)"
+        ];
+
+        let provider;
+        let signer;
+        let userAddress;
+        let jpydContract;
+        let wrapperContract;
+        let japtContract;
+
+        // Set fee rate
+        const feeRate = config.contractType === 'transfer5' ? 0.5 : 1.0;
+        document.getElementById('feeRate').textContent = feeRate + '%';
+        document.getElementById('shopName').textContent = config.shopName;
+
+        async function connectWallet() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    showStatus('MetaMaskがインストールされていません。MetaMask Mobileのブラウザで開いてください。', 'error');
+                    return;
+                }
+
+                // Check if addresses are provided
+                if (!config.jpydAddress || !config.wrapperAddress || !config.targetAddress) {
+                    showStatus('エラー: コントラクトアドレスがURLパラメータに含まれていません', 'error');
+                    return;
+                }
+
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                userAddress = await signer.getAddress();
+
+                // Initialize contracts
+                jpydContract = new ethers.Contract(config.jpydAddress, JPYD_ABI, provider);
+                wrapperContract = new ethers.Contract(config.wrapperAddress, WRAPPER_ABI, signer);
+                if (config.japtAddress) {
+                    japtContract = new ethers.Contract(config.japtAddress, JAPT_ABI, provider);
+                }
+
+                // Show payment section
+                document.getElementById('walletSection').classList.add('hidden');
+                document.getElementById('paymentSection').classList.remove('hidden');
+
+                // Load balances
+                await updateBalances();
+
+                showStatus('接続完了！金額を入力して支払いを開始してください', 'success');
+            } catch (error) {
+                console.error(error);
+                showStatus('接続エラー: ' + error.message, 'error');
+            }
+        }
+
+        async function updateBalances() {
+            try {
+                const jpydBalance = await jpydContract.balanceOf(userAddress);
+                let balanceHTML = `
+                    <div class="balance-label">JPYD残高</div>
+                    <div class="balance-amount">${ethers.utils.formatEther(jpydBalance)} JPYD</div>
+                `;
+
+                if (japtContract) {
+                    const japtBalance = await japtContract.balanceOf(userAddress);
+                    balanceHTML += `
+                        <div class="balance-label" style="margin-top: 10px;">JAPT残高</div>
+                        <div class="balance-amount" style="color: #4CAF50;">${ethers.utils.formatEther(japtBalance)} JAPT</div>
+                    `;
+                }
+
+                document.getElementById('balanceInfo').innerHTML = balanceHTML;
+            } catch (error) {
+                console.error('Balance update error:', error);
+            }
+        }
+
+        function updateBreakdown() {
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+
+            const feePercentage = config.contractType === 'transfer5' ? 0.005 : 0.01;
+            const fee = amount * feePercentage;
+            const shopReceives = amount - fee;
+            const reward = fee; // Same as fee amount in JAPT
+
+            document.getElementById('totalAmount').textContent = amount.toFixed(2) + ' JPYD';
+            document.getElementById('shopAmount').textContent = shopReceives.toFixed(2) + ' JPYD';
+            document.getElementById('feeAmount').textContent = fee.toFixed(2) + ' JPYD';
+            document.getElementById('rewardAmount').textContent = reward.toFixed(2) + ' JAPT';
+
+            // Enable/disable pay button
+            document.getElementById('payButton').disabled = amount <= 0;
+        }
+
+        async function pay() {
+            const amount = document.getElementById('amount').value;
+            if (!amount || parseFloat(amount) <= 0) {
+                showStatus('金額を入力してください', 'error');
+                return;
+            }
+
+            try {
+                document.getElementById('payButton').disabled = true;
+                showStatus('署名を作成中... <div class="loading"></div>', 'info');
+
+                const amountWei = ethers.utils.parseEther(amount);
+                const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+
+                // Get nonce
+                const nonce = await jpydContract.nonces(userAddress);
+
+                // Get domain separator
+                const domainSeparator = await jpydContract.DOMAIN_SEPARATOR();
+
+                // Create EIP-712 signature for permit
+                const domain = {
+                    name: 'JPY Digital',
+                    version: '1',
+                    chainId: (await provider.getNetwork()).chainId,
+                    verifyingContract: config.jpydAddress
+                };
+
+                const types = {
+                    Permit: [
+                        { name: 'owner', type: 'address' },
+                        { name: 'spender', type: 'address' },
+                        { name: 'value', type: 'uint256' },
+                        { name: 'nonce', type: 'uint256' },
+                        { name: 'deadline', type: 'uint256' }
+                    ]
+                };
+
+                const value = {
+                    owner: userAddress,
+                    spender: config.wrapperAddress,
+                    value: amountWei,
+                    nonce: nonce,
+                    deadline: deadline
+                };
+
+                // Sign the permit
+                const signature = await signer._signTypedData(domain, types, value);
+                const sig = ethers.utils.splitSignature(signature);
+
+                showStatus('決済を実行中... <div class="loading"></div>', 'info');
+
+                // Execute transferWithPermit
+                const tx = await wrapperContract.transferWithPermit(
+                    config.targetAddress,
+                    amountWei,
+                    deadline,
+                    sig.v,
+                    sig.r,
+                    sig.s
+                );
+
+                showStatus('トランザクション送信完了！確認中... <div class="loading"></div>', 'info');
+
+                await tx.wait();
+
+                showStatus('✅ 決済完了！JAPTポイントを獲得しました！', 'success');
+
+                // Update balances
+                await updateBalances();
+
+                // Clear amount
+                document.getElementById('amount').value = '';
+                updateBreakdown();
+
+                setTimeout(() => {
+                    document.getElementById('payButton').disabled = false;
+                }, 2000);
+
+            } catch (error) {
+                console.error(error);
+                let errorMsg = error.message;
+
+                if (error.code === 4001) {
+                    errorMsg = 'ユーザーが署名を拒否しました';
+                } else if (error.message.includes('insufficient funds')) {
+                    errorMsg = 'JPYD残高が不足しています';
+                }
+
+                showStatus('❌ エラー: ' + errorMsg, 'error');
+                document.getElementById('payButton').disabled = false;
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.className = 'status ' + type;
+            status.innerHTML = message;
+        }
+
+        // Auto-connect if on mobile
+        window.addEventListener('load', async () => {
+            if (window.ethereum && window.ethereum.isMetaMask) {
+                // Check if already connected
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    await connectWallet();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

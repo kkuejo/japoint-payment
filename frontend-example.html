@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAPOINT Payment System</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        input {
+            padding: 10px;
+            width: 200px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            min-height: 20px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .info {
+            color: blue;
+        }
+        .balance {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JAPOINT Payment System</h1>
+
+        <div class="section">
+            <h2>1. ウォレット接続</h2>
+            <button id="connectButton" onclick="connectWallet()">MetaMask接続</button>
+            <div class="status" id="walletStatus">未接続</div>
+        </div>
+
+        <div class="section">
+            <h2>2. 残高確認</h2>
+            <button id="checkBalanceButton" onclick="checkBalances()" disabled>残高を確認</button>
+            <div class="balance" id="balances"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. 送金方法を選択</h2>
+
+            <h3>方法A: JPYDWrapper経由（推奨・完全自動）</h3>
+            <p>Transfer10（1%手数料）またはTransfer5（0.5%手数料）を選択</p>
+            <input type="number" id="amountWrapper" placeholder="金額 (JPYD)" value="100">
+            <select id="contractSelect">
+                <option value="transfer10">Transfer10 (1%手数料)</option>
+                <option value="transfer5">Transfer5 (0.5%手数料)</option>
+            </select>
+            <br><br>
+            <button onclick="approveJPYDWrapper()" disabled id="approveWrapperBtn">1. JPYDをApprove</button>
+            <button onclick="transferViaWrapper()" disabled id="transferWrapperBtn">2. 送金実行</button>
+            <div class="status" id="wrapperStatus"></div>
+
+            <hr>
+
+            <h3>方法B: Transfer10に直接送金</h3>
+            <input type="number" id="amountDirect" placeholder="金額 (JPYD)" value="100">
+            <br><br>
+            <button onclick="approveTransfer10()" disabled id="approveDirectBtn">1. JPYDをApprove</button>
+            <button onclick="depositToTransfer10()" disabled id="depositBtn">2. Deposit実行</button>
+            <div class="status" id="directStatus"></div>
+        </div>
+
+        <div class="section">
+            <h2>コントラクトアドレス設定</h2>
+            <p>デプロイ後のアドレスを入力してください</p>
+            <label>JPYD: <input type="text" id="jpydAddress" style="width: 400px;" placeholder="0x..."></label><br>
+            <label>JPYDWrapper: <input type="text" id="wrapperAddress" style="width: 400px;" placeholder="0x..."></label><br>
+            <label>Transfer10: <input type="text" id="transfer10Address" style="width: 400px;" placeholder="0x..."></label><br>
+            <label>Transfer5: <input type="text" id="transfer5Address" style="width: 400px;" placeholder="0x..."></label><br>
+            <label>JAPoint: <input type="text" id="japtAddress" style="width: 400px;" placeholder="0x..."></label><br>
+            <button onclick="saveAddresses()">アドレスを保存</button>
+        </div>
+    </div>
+
+    <script>
+        // ABIs
+        const JPYD_ABI = [
+            "function approve(address spender, uint256 amount) external returns (bool)",
+            "function balanceOf(address account) external view returns (uint256)",
+            "function allowance(address owner, address spender) external view returns (uint256)"
+        ];
+
+        const WRAPPER_ABI = [
+            "function transfer(address to, uint256 amount) external returns (bool)"
+        ];
+
+        const TRANSFER10_ABI = [
+            "function deposit(uint256 amount) external"
+        ];
+
+        const JAPT_ABI = [
+            "function balanceOf(address account) external view returns (uint256)"
+        ];
+
+        let provider;
+        let signer;
+        let userAddress;
+        let jpydContract;
+        let wrapperContract;
+        let transfer10Contract;
+        let transfer5Contract;
+        let japtContract;
+
+        async function connectWallet() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    alert('MetaMaskがインストールされていません！');
+                    return;
+                }
+
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                userAddress = await signer.getAddress();
+
+                document.getElementById('walletStatus').innerHTML =
+                    `<span class="success">接続完了: ${userAddress}</span>`;
+
+                // Enable buttons
+                document.getElementById('checkBalanceButton').disabled = false;
+                document.getElementById('approveWrapperBtn').disabled = false;
+                document.getElementById('transferWrapperBtn').disabled = false;
+                document.getElementById('approveDirectBtn').disabled = false;
+                document.getElementById('depositBtn').disabled = false;
+
+                loadAddresses();
+            } catch (error) {
+                document.getElementById('walletStatus').innerHTML =
+                    `<span class="error">エラー: ${error.message}</span>`;
+            }
+        }
+
+        function saveAddresses() {
+            const addresses = {
+                jpyd: document.getElementById('jpydAddress').value,
+                wrapper: document.getElementById('wrapperAddress').value,
+                transfer10: document.getElementById('transfer10Address').value,
+                transfer5: document.getElementById('transfer5Address').value,
+                japt: document.getElementById('japtAddress').value
+            };
+
+            localStorage.setItem('contractAddresses', JSON.stringify(addresses));
+
+            if (signer) {
+                initContracts(addresses);
+            }
+
+            alert('アドレスを保存しました！');
+        }
+
+        function loadAddresses() {
+            // Default addresses from Sepolia deployment
+            const defaultAddresses = {
+                jpyd: '0xF60a976A2b9d21Bd19e63722fCdAc03C2737E9F9',
+                wrapper: '0x3C827F9fdf0E99f683074A86d4AD169043C29bd5',
+                transfer10: '0xBA8eF1c9739AEd44a76B63e27A06a0dC56A36FC0',
+                transfer5: '0x6b8c2bdD6E14bc45BA6358FC099DC74e9261bEd5',
+                japt: '0x9C27a3f7a13b0D3aaE075Aa76b3dECB651e2BB36'
+            };
+
+            const saved = localStorage.getItem('contractAddresses');
+            const addresses = saved ? JSON.parse(saved) : defaultAddresses;
+
+            document.getElementById('jpydAddress').value = addresses.jpyd || defaultAddresses.jpyd;
+            document.getElementById('wrapperAddress').value = addresses.wrapper || defaultAddresses.wrapper;
+            document.getElementById('transfer10Address').value = addresses.transfer10 || defaultAddresses.transfer10;
+            document.getElementById('transfer5Address').value = addresses.transfer5 || defaultAddresses.transfer5;
+            document.getElementById('japtAddress').value = addresses.japt || defaultAddresses.japt;
+
+            if (signer) {
+                initContracts(addresses);
+            }
+        }
+
+        function initContracts(addresses) {
+            if (addresses.jpyd) jpydContract = new ethers.Contract(addresses.jpyd, JPYD_ABI, signer);
+            if (addresses.wrapper) wrapperContract = new ethers.Contract(addresses.wrapper, WRAPPER_ABI, signer);
+            if (addresses.transfer10) transfer10Contract = new ethers.Contract(addresses.transfer10, TRANSFER10_ABI, signer);
+            if (addresses.transfer5) transfer5Contract = new ethers.Contract(addresses.transfer5, TRANSFER10_ABI, signer);
+            if (addresses.japt) japtContract = new ethers.Contract(addresses.japt, JAPT_ABI, signer);
+        }
+
+        async function checkBalances() {
+            try {
+                if (!jpydContract || !japtContract) {
+                    alert('コントラクトアドレスを設定してください');
+                    return;
+                }
+
+                const jpydBalance = await jpydContract.balanceOf(userAddress);
+                const japtBalance = await japtContract.balanceOf(userAddress);
+
+                document.getElementById('balances').innerHTML = `
+                    JPYD: ${ethers.utils.formatEther(jpydBalance)} JPYD<br>
+                    JAPT: ${ethers.utils.formatEther(japtBalance)} JAPT
+                `;
+            } catch (error) {
+                document.getElementById('balances').innerHTML =
+                    `<span class="error">エラー: ${error.message}</span>`;
+            }
+        }
+
+        async function approveJPYDWrapper() {
+            try {
+                if (!jpydContract || !wrapperContract) {
+                    alert('コントラクトアドレスを設定してください');
+                    return;
+                }
+
+                const amount = document.getElementById('amountWrapper').value;
+                const amountWei = ethers.utils.parseEther(amount);
+
+                document.getElementById('wrapperStatus').innerHTML =
+                    '<span class="info">Approve実行中...</span>';
+
+                const tx = await jpydContract.approve(wrapperContract.address, amountWei);
+                await tx.wait();
+
+                document.getElementById('wrapperStatus').innerHTML =
+                    `<span class="success">Approve完了！ TxHash: ${tx.hash}</span>`;
+            } catch (error) {
+                document.getElementById('wrapperStatus').innerHTML =
+                    `<span class="error">エラー: ${error.message}</span>`;
+            }
+        }
+
+        async function transferViaWrapper() {
+            try {
+                if (!wrapperContract) {
+                    alert('JPYDWrapperアドレスを設定してください');
+                    return;
+                }
+
+                const amount = document.getElementById('amountWrapper').value;
+                const amountWei = ethers.utils.parseEther(amount);
+                const contractType = document.getElementById('contractSelect').value;
+
+                const targetAddress = contractType === 'transfer10'
+                    ? document.getElementById('transfer10Address').value
+                    : document.getElementById('transfer5Address').value;
+
+                if (!targetAddress) {
+                    alert('Transfer10/5のアドレスを設定してください');
+                    return;
+                }
+
+                document.getElementById('wrapperStatus').innerHTML =
+                    '<span class="info">送金実行中...</span>';
+
+                const tx = await wrapperContract.transfer(targetAddress, amountWei);
+                await tx.wait();
+
+                document.getElementById('wrapperStatus').innerHTML =
+                    `<span class="success">送金完了！JAPTを受け取りました！ TxHash: ${tx.hash}</span>`;
+
+                checkBalances();
+            } catch (error) {
+                document.getElementById('wrapperStatus').innerHTML =
+                    `<span class="error">エラー: ${error.message}</span>`;
+            }
+        }
+
+        async function approveTransfer10() {
+            try {
+                if (!jpydContract || !transfer10Contract) {
+                    alert('コントラクトアドレスを設定してください');
+                    return;
+                }
+
+                const amount = document.getElementById('amountDirect').value;
+                const amountWei = ethers.utils.parseEther(amount);
+
+                document.getElementById('directStatus').innerHTML =
+                    '<span class="info">Approve実行中...</span>';
+
+                const tx = await jpydContract.approve(transfer10Contract.address, amountWei);
+                await tx.wait();
+
+                document.getElementById('directStatus').innerHTML =
+                    `<span class="success">Approve完了！ TxHash: ${tx.hash}</span>`;
+            } catch (error) {
+                document.getElementById('directStatus').innerHTML =
+                    `<span class="error">エラー: ${error.message}</span>`;
+            }
+        }
+
+        async function depositToTransfer10() {
+            try {
+                if (!transfer10Contract) {
+                    alert('Transfer10アドレスを設定してください');
+                    return;
+                }
+
+                const amount = document.getElementById('amountDirect').value;
+                const amountWei = ethers.utils.parseEther(amount);
+
+                document.getElementById('directStatus').innerHTML =
+                    '<span class="info">Deposit実行中...</span>';
+
+                const tx = await transfer10Contract.deposit(amountWei);
+                await tx.wait();
+
+                document.getElementById('directStatus').innerHTML =
+                    `<span class="success">Deposit完了！JAPTを受け取りました！ TxHash: ${tx.hash}</span>`;
+
+                checkBalances();
+            } catch (error) {
+                document.getElementById('directStatus').innerHTML =
+                    `<span class="error">エラー: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

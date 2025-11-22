@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAPOINT QRコード - Transfer5 & Transfer10</title>
+    <script src="https://unpkg.com/qrcode@1.4.4/build/qrcode.min.js" onerror="loadQRCodeFallback()"></script>
+    <script>
+        // Fallback to alternative CDN if primary fails
+        function loadQRCodeFallback() {
+            console.log('Primary CDN failed, trying fallback...');
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js';
+            script.onerror = function() {
+                console.error('All CDN attempts failed');
+                alert('QRCodeライブラリを読み込めませんでした。インターネット接続を確認してください。');
+            };
+            document.head.appendChild(script);
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .qr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .qr-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .qr-card.transfer5 {
+            border-top: 5px solid #4CAF50;
+        }
+
+        .qr-card.transfer10 {
+            border-top: 5px solid #2196F3;
+        }
+
+        .qr-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .qr-card.transfer5 .qr-title {
+            color: #4CAF50;
+        }
+
+        .qr-card.transfer10 .qr-title {
+            color: #2196F3;
+        }
+
+        .fee-info {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .qr-code-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        canvas {
+            border: 2px solid #eee;
+            border-radius: 8px;
+        }
+
+        .url-info {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            word-break: break-all;
+            font-family: monospace;
+            margin: 15px 0;
+            text-align: left;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .info-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .info-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .comparison-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .contract-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+
+        .contract-info h3 {
+            margin-bottom: 10px;
+            color: #1976d2;
+        }
+
+        .address {
+            font-family: monospace;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .no-print {
+                display: none;
+            }
+            .qr-grid {
+                page-break-inside: avoid;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .qr-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 JAPOINT 決済QRコード</h1>
+        <p class="subtitle">スマホでスキャンして即座に決済！</p>
+
+        <div class="info-section no-print">
+            <h2>📋 使い方</h2>
+            <ol>
+                <li>下記のQRコードをお客様にスキャンしてもらう</li>
+                <li>お客様が金額を入力</li>
+                <li>お客様が「支払う」ボタンをタップして署名</li>
+                <li>✅ 完了！自動的にショップと会社に送金、お客様にJAPTポイント付与</li>
+            </ol>
+        </div>
+
+        <div class="contract-info no-print">
+            <h3>🔧 使用コントラクトアドレス（Sepolia Testnet）</h3>
+            <div>JPYD: <span class="address">0xF60a976A2b9d21Bd19e63722fCdAc03C2737E9F9</span></div>
+            <div>JPYDWrapper: <span class="address">0x3C827F9fdf0E99f683074A86d4AD169043C29bd5</span></div>
+            <div>Transfer10: <span class="address">0xBA8eF1c9739AEd44a76B63e27A06a0dC56A36FC0</span></div>
+            <div>Transfer5: <span class="address">0x6b8c2bdD6E14bc45BA6358FC099DC74e9261bEd5</span></div>
+            <div>JAPoint: <span class="address">0x9C27a3f7a13b0D3aaE075Aa76b3dECB651e2BB36</span></div>
+        </div>
+
+        <div class="qr-grid">
+            <!-- Transfer5 QR Code -->
+            <div class="qr-card transfer5">
+                <div class="qr-title">🟢 Transfer5</div>
+                <div class="fee-info">手数料 0.5% プラン</div>
+                <div class="highlight">
+                    <strong>お客様受取:</strong> 0.5% JAPT還元<br>
+                    <strong>ショップ受取:</strong> 99.5%
+                </div>
+                <div class="qr-code-container">
+                    <canvas id="qrTransfer5"></canvas>
+                </div>
+                <div class="url-info" id="urlTransfer5"></div>
+                <div class="buttons">
+                    <button class="download-btn" onclick="downloadQR('qrTransfer5', 'transfer5-qr.png')">
+                        💾 ダウンロード
+                    </button>
+                </div>
+            </div>
+
+            <!-- Transfer10 QR Code -->
+            <div class="qr-card transfer10">
+                <div class="qr-title">🔵 Transfer10</div>
+                <div class="fee-info">手数料 1% プラン</div>
+                <div class="highlight">
+                    <strong>お客様受取:</strong> 1% JAPT還元<br>
+                    <strong>ショップ受取:</strong> 99%
+                </div>
+                <div class="qr-code-container">
+                    <canvas id="qrTransfer10"></canvas>
+                </div>
+                <div class="url-info" id="urlTransfer10"></div>
+                <div class="buttons">
+                    <button class="download-btn" onclick="downloadQR('qrTransfer10', 'transfer10-qr.png')">
+                        💾 ダウンロード
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section no-print">
+            <h2>📊 プラン比較</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>Transfer5 (0.5%)</th>
+                        <th>Transfer10 (1%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>手数料率</strong></td>
+                        <td>0.5%</td>
+                        <td>1%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ショップ受取</strong></td>
+                        <td>99.5%</td>
+                        <td>99%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>お客様JAPT還元</strong></td>
+                        <td>0.5%</td>
+                        <td>1%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>会社受取</strong></td>
+                        <td>0.5%</td>
+                        <td>1%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>おすすめ用途</strong></td>
+                        <td>高額商品、手数料を抑えたい場合</td>
+                        <td>通常商品、ポイント還元を重視</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding-top: 20px;">
+                            <strong>例: 1000 JPYD の決済の場合</strong>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>ショップ受取</td>
+                        <td style="color: #4CAF50; font-weight: bold;">995 JPYD</td>
+                        <td style="color: #2196F3; font-weight: bold;">990 JPYD</td>
+                    </tr>
+                    <tr>
+                        <td>お客様JAPT</td>
+                        <td style="color: #4CAF50; font-weight: bold;">5 JAPT</td>
+                        <td style="color: #2196F3; font-weight: bold;">10 JAPT</td>
+                    </tr>
+                    <tr>
+                        <td>会社受取</td>
+                        <td>5 JPYD</td>
+                        <td>10 JPYD</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-section no-print">
+            <h2>🎯 テスト方法</h2>
+            <ol>
+                <li><strong>Anvilが起動していることを確認</strong>
+                    <pre style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">anvil</pre>
+                </li>
+                <li><strong>MetaMask Mobileで設定</strong>
+                    <ul style="margin-top: 10px;">
+                        <li>ネットワーク名: Anvil Local</li>
+                        <li>RPC URL: http://YOUR_PC_IP:8545</li>
+                        <li>Chain ID: 31337</li>
+                    </ul>
+                </li>
+                <li><strong>テストアカウントをインポート</strong>
+                    <pre style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">秘密鍵: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6</pre>
+                </li>
+                <li><strong>QRコードをスキャンして決済テスト！</strong></li>
+            </ol>
+        </div>
+
+        <div class="buttons no-print" style="justify-content: center; margin: 30px 0;">
+            <button class="download-btn" onclick="window.print()">🖨️ 両方を印刷</button>
+        </div>
+    </div>
+
+    <script>
+        // Contract addresses (from Sepolia deployment)
+        const ADDRESSES = {
+            jpyd: '0xF60a976A2b9d21Bd19e63722fCdAc03C2737E9F9',
+            wrapper: '0x3C827F9fdf0E99f683074A86d4AD169043C29bd5',
+            transfer10: '0xBA8eF1c9739AEd44a76B63e27A06a0dC56A36FC0',
+            transfer5: '0x6b8c2bdD6E14bc45BA6358FC099DC74e9261bEd5',
+            japt: '0x9C27a3f7a13b0D3aaE075Aa76b3dECB651e2BB36'
+        };
+
+        // Base URL for payment page
+        // Use the current server URL
+        const BASE_URL = window.location.origin + window.location.pathname.replace('qr-codes-display.html', 'mobile-payment.html');
+
+        function generateQRCode(canvasId, urlId, type, shopName) {
+            const targetAddress = type === 'transfer5' ? ADDRESSES.transfer5 : ADDRESSES.transfer10;
+
+            const params = new URLSearchParams({
+                shop: shopName,
+                type: type,
+                jpyd: ADDRESSES.jpyd,
+                wrapper: ADDRESSES.wrapper,
+                target: targetAddress,
+                japt: ADDRESSES.japt
+            });
+
+            const url = `${BASE_URL}?${params.toString()}`;
+
+            // Display URL
+            document.getElementById(urlId).textContent = url;
+
+            // Generate QR code
+            QRCode.toCanvas(
+                document.getElementById(canvasId),
+                url,
+                {
+                    width: 300,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                },
+                function (error) {
+                    if (error) {
+                        console.error(error);
+                        alert('QRコード生成エラー: ' + error);
+                    }
+                }
+            );
+        }
+
+        function downloadQR(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) {
+                alert('QRコードが見つかりません');
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Wait for QRCode library to load
+        function initQRCodes() {
+            console.log('Attempting to generate QR codes...');
+            console.log('QRCode available:', typeof QRCode !== 'undefined');
+
+            if (typeof QRCode === 'undefined') {
+                console.log('QRCode not ready yet, retrying in 100ms...');
+                setTimeout(initQRCodes, 100);
+                return;
+            }
+
+            try {
+                console.log('Generating QR codes...');
+                generateQRCode('qrTransfer5', 'urlTransfer5', 'transfer5', 'テストショップ（0.5%）');
+                generateQRCode('qrTransfer10', 'urlTransfer10', 'transfer10', 'テストショップ（1%）');
+                console.log('QR codes generated successfully');
+            } catch (error) {
+                console.error('QR生成エラー:', error);
+                alert('QRコード生成中にエラーが発生しました: ' + error.message);
+            }
+        }
+
+        // Start initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initQRCodes);
+        } else {
+            initQRCodes();
+        }
+    </script>
+</body>
+</html>
