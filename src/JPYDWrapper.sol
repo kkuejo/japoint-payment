@@ -86,6 +86,7 @@ contract JPYDWrapper {
     /**
      * @dev Internal function to notify recipient contract about token receipt
      * Uses low-level call to forward all available gas
+     * Reverts if the recipient contract call fails
      * @param from Original sender of the tokens
      * @param to Recipient address (contract)
      * @param amount Amount of tokens transferred
@@ -99,9 +100,31 @@ contract JPYDWrapper {
         );
 
         // Call with all available gas by not specifying a gas limit
-        (bool success,) = to.call(data);
+        (bool success, bytes memory returnData) = to.call(data);
+
+        // Revert if the call failed to prevent tokens from being stuck
+        require(success, string(abi.encodePacked(
+            "Recipient contract call failed: ",
+            _getRevertMsg(returnData)
+        )));
 
         emit NotificationAttempt(to, success);
+    }
+
+    /**
+     * @dev Extract revert message from returnData
+     * @param returnData The return data from a failed call
+     * @return The revert message as a string
+     */
+    function _getRevertMsg(bytes memory returnData) internal pure returns (string memory) {
+        // If the returnData length is less than 68, then the transaction failed silently
+        if (returnData.length < 68) return "Transaction reverted silently";
+
+        assembly {
+            // Slice the sighash (first 4 bytes)
+            returnData := add(returnData, 0x04)
+        }
+        return abi.decode(returnData, (string)); // All that remains is the revert string
     }
 
     function _transferFrom(address from, address to, uint256 amount) internal {

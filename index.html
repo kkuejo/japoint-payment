@@ -174,19 +174,19 @@
         <p class="subtitle">モバイル対応のスマート決済システム</p>
 
         <div class="info-box">
-            <h2><span class="status-indicator"></span>サーバー稼働中</h2>
+            <h2><span class="status-indicator"></span>Sepolia テストネット</h2>
             <div class="info-item">
                 <div class="info-item-icon">🌐</div>
                 <div class="info-item-text">
-                    <div class="info-item-label">ローカルURL</div>
-                    <div class="info-item-value">http://localhost:8080</div>
+                    <div class="info-item-label">決済ページURL</div>
+                    <div class="info-item-value">https://kkuejo.github.io/japoint-payment/</div>
                 </div>
             </div>
             <div class="info-item">
-                <div class="info-item-icon">📱</div>
+                <div class="info-item-icon">⛓️</div>
                 <div class="info-item-text">
-                    <div class="info-item-label">ネットワークURL（スマホからアクセス）</div>
-                    <div class="info-item-value" id="networkUrl">http://172.21.220.239:8080</div>
+                    <div class="info-item-label">ネットワーク</div>
+                    <div class="info-item-value">Sepolia Testnet (Chain ID: 11155111)</div>
                 </div>
             </div>
         </div>
@@ -220,32 +220,25 @@
         <div class="info-box">
             <h2>🚀 クイックスタート</h2>
             <ol style="padding-left: 20px; color: #333;">
-                <li style="margin-bottom: 10px;"><strong>Anvilを起動:</strong> <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">anvil</code></li>
-                <li style="margin-bottom: 10px;"><strong>MetaMask Mobileでネットワーク設定:</strong>
+                <li style="margin-bottom: 10px;"><strong>MetaMask Mobileでネットワークを追加:</strong>
                     <ul style="margin-top: 5px; padding-left: 20px;">
-                        <li>RPC URL: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;" id="rpcUrl">http://172.21.220.239:8545</code></li>
-                        <li>Chain ID: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">31337</code></li>
+                        <li>ネットワーク名: Sepolia Test Network</li>
+                        <li>RPC URL: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">https://ethereum-sepolia-rpc.publicnode.com</code></li>
+                        <li>Chain ID: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">11155111</code></li>
+                        <li>通貨記号: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">ETH</code></li>
                     </ul>
                 </li>
                 <li style="margin-bottom: 10px;"><strong>QRコードをスキャン</strong>して決済テスト！</li>
+                <li style="margin-bottom: 10px;"><strong>Sepolia Faucet</strong>でテストETHを取得: <a href="https://sepoliafaucet.com/" target="_blank" style="color: #667eea;">sepoliafaucet.com</a></li>
             </ol>
         </div>
 
         <div class="footer">
             <p>🔒 Powered by JAPOINT - モバイル決済システム</p>
             <p style="margin-top: 10px; font-size: 12px;">
-                コントラクトアドレス (Anvil Local Network)
+                コントラクトアドレス (Sepolia Testnet)
             </p>
         </div>
     </div>
-
-    <script>
-        // Auto-detect network URL
-        window.addEventListener('load', () => {
-            const networkUrl = window.location.origin;
-            document.getElementById('networkUrl').textContent = networkUrl;
-            document.getElementById('rpcUrl').textContent = networkUrl.replace('8080', '8545');
-        });
-    </script>
 </body>
 </html>
