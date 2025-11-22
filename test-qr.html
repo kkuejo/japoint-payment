@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QRコードテスト</title>
+    <script src="https://unpkg.com/qrcode@1.4.4/build/qrcode.min.js"></script>
+</head>
+<body>
+    <h1>QRコードテスト</h1>
+    <div id="qr1"></div>
+    <p id="status">生成中...</p>
+
+    <script>
+        console.log('QRCode available:', typeof QRCode !== 'undefined');
+
+        try {
+            const testUrl = 'http://localhost:8080/mobile-payment.html?test=123';
+
+            QRCode.toCanvas(
+                document.createElement('canvas'),
+                testUrl,
+                { width: 300 },
+                function (error, canvas) {
+                    if (error) {
+                        document.getElementById('status').textContent = 'エラー: ' + error;
+                        console.error(error);
+                    } else {
+                        document.getElementById('qr1').appendChild(canvas);
+                        document.getElementById('status').textContent = '成功！';
+                    }
+                }
+            );
+        } catch (e) {
+            document.getElementById('status').textContent = 'Exception: ' + e.message;
+            console.error(e);
+        }
+    </script>
+</body>
+</html>
