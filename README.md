@@ -1,6 +1,6 @@
 # JAPOINT System
 
-A complete stablecoin payment and reward system built with Solidity and Foundry, featuring automatic payment processing with JPYD (Japanese Yen-pegged stablecoin), XPoint rewards, and gas-optimized architecture.
+A complete stablecoin payment and reward system built with Solidity and Foundry, featuring automatic payment processing with JPYD (Japanese Yen-pegged stablecoin), JAPoint rewards, and gas-optimized architecture.
 
 ## System Overview
 
@@ -13,18 +13,18 @@ This project consists of 5 main contracts that work together to provide seamless
 - EIP-2612 permit functionality
 - **Automatic notification system**: Automatically triggers payment processing when tokens are sent to supported contracts
 
-### 2. XPoint (XA Point)
-- ERC20 reward token with 18 decimals (Symbol: XPT)
+### 2. JAPoint (XA Point)
+- ERC20 reward token with 18 decimals (Symbol: JAPT)
 - Mintable by owner (initially the contract owner at deployment)
 - Burnable by token holders
 - Earned through payment transactions
 
-### 3. XPointMint
+### 3. JAPointMint
 - **Gas-optimized distribution contract** (uses pre-minted token reserve)
-- Holds 1 trillion XPT (1,000,000,000,000) as distribution reserve
-- Users approve JPYD and call `transferXPoint(recipient)` to receive XPoint
+- Holds 1 trillion JAPT (1,000,000,000,000) as distribution reserve
+- Users approve JPYD and call `transferJAPoint(recipient)` to receive JAPoint
 - JPYD is transferred to the designated company address
-- 1:1 exchange rate (1 JPYD = 1 XPT)
+- 1:1 exchange rate (1 JPYD = 1 JAPT)
 - **No minting per transaction** - significantly reduces gas costs
 
 ### 4. Transfer10
@@ -34,7 +34,7 @@ This project consists of 5 main contracts that work together to provide seamless
   2. **deposit(amount)**: Specify exact amount to process
   3. **processPayment()**: Process all approved JPYD
 - Receives JPYD payments and distributes:
-  - 1% to XPointMint (user receives equivalent XPoint as reward)
+  - 1% to JAPointMint (user receives equivalent JAPoint as reward)
   - 99% to shop address (payment to merchant)
 - Simplifies payment+reward process in one transaction
 
@@ -46,7 +46,7 @@ This project consists of 5 main contracts that work together to provide seamless
   2. **deposit(amount)**: Specify exact amount to process
   3. **processPayment()**: Process all approved JPYD
 - Receives JPYD payments and distributes:
-  - 0.5% to XPointMint (user receives equivalent XPoint as reward)
+  - 0.5% to JAPointMint (user receives equivalent JAPoint as reward)
   - 99.5% to shop address (payment to merchant)
 - Lower reward rate than Transfer10, more funds to shop
 
@@ -61,9 +61,9 @@ Send JPYD directly to Transfer10 address from MetaMask or any wallet - **no func
 
 ### Gas-Optimized Architecture
 - **Transfer-based distribution** instead of per-transaction minting
-- **Pre-minted reserve**: 1 trillion XPT minted to XPointMint at deployment
+- **Pre-minted reserve**: 1 trillion JAPT minted to JAPointMint at deployment
 - Reduces gas costs by ~2.2% compared to mint-per-transaction approach
-- More secure: XPointMint doesn't need to be owner of XPoint
+- More secure: JAPointMint doesn't need to be owner of JAPoint
 
 ## How It Works
 
@@ -87,8 +87,8 @@ cast send <JPYD_ADDRESS> \
 2. JPYD detects Transfer10 is a contract
 3. Automatically calls `Transfer10.onTokenReceived()`
 4. Transfer10 processes payment:
-   - Approves 1% to XPointMint
-   - Calls `transferXPoint(sender)` - sender receives XPT reward
+   - Approves 1% to JAPointMint
+   - Calls `transferJAPoint(sender)` - sender receives JAPT reward
    - Transfers 99% to shop
    - Emits `PaymentProcessed` event
 5. Everything completes in 1 transaction!
@@ -132,28 +132,28 @@ cast send <JPYD_ADDRESS> \
 2. JPYD detects Transfer5 is a contract
 3. Automatically calls `Transfer5.onTokenReceived()`
 4. Transfer5 processes payment:
-   - Approves 0.5% to XPointMint
-   - Calls `transferXPoint(sender)` - sender receives XPT reward
+   - Approves 0.5% to JAPointMint
+   - Calls `transferJAPoint(sender)` - sender receives JAPT reward
    - Transfers 99.5% to shop
    - Emits `PaymentProcessed` event
 5. Everything completes in 1 transaction!
 
-### Method 4: Direct XPoint Exchange
+### Method 4: Direct JAPoint Exchange
 
-Exchange JPYD for XPoint directly via XPointMint:
+Exchange JPYD for JAPoint directly via JAPointMint:
 
 ```bash
-# 1. Approve JPYD to XPointMint
+# 1. Approve JPYD to JAPointMint
 cast send <JPYD_ADDRESS> \
   "approve(address,uint256)" \
-  <XPOINTMINT_ADDRESS> \
+  <JAPOINTMINT_ADDRESS> \
   1000000000000000000000 \
   --private-key $PRIVATE_KEY \
   --rpc-url $RPC_URL
 
-# 2. Transfer XPoint (JPYD goes to company)
-cast send <XPOINTMINT_ADDRESS> \
-  "transferXPoint(address)" \
+# 2. Transfer JAPoint (JPYD goes to company)
+cast send <JAPOINTMINT_ADDRESS> \
+  "transferJAPoint(address)" \
   <RECIPIENT_ADDRESS> \
   --private-key $PRIVATE_KEY \
   --rpc-url $RPC_URL
@@ -164,8 +164,8 @@ cast send <XPOINTMINT_ADDRESS> \
 | Contract | Name | Symbol | Decimals | Features |
 |----------|------|--------|----------|----------|
 | JPYD | JPY Digital | JPYD | 18 | Mintable, Burnable, Permit, Auto-notification |
-| XPoint | XA Point | XPT | 18 | Mintable (owner only), Burnable |
-| XPointMint | - | - | - | Pre-minted reserve (1T XPT), 1:1 exchange, transfer to company |
+| JAPoint | XA Point | JAPT | 18 | Mintable (owner only), Burnable |
+| JAPointMint | - | - | - | Pre-minted reserve (1T JAPT), 1:1 exchange, transfer to company |
 | Transfer10 | - | - | - | Auto-processing, 1% reward, 99% to shop |
 | Transfer5 | - | - | - | Auto-processing, 0.5% reward, 99.5% to shop |
 
@@ -253,8 +253,8 @@ forge script script/DeployFullSystem.s.sol:DeployFullSystem \
 
 This deploys:
 - JPYD with 10M initial supply
-- XPoint
-- XPointMint with 1T XPT reserve
+- JAPoint
+- JAPointMint with 1T JAPT reserve
 - Transfer10 for payment processing (1% reward)
 - Transfer5 for payment processing (0.5% reward)
 
@@ -280,8 +280,8 @@ JAPOINT system is live on Sepolia testnet:
 | Contract | Address | Etherscan |
 |----------|---------|-----------|
 | **JPYD** | `0xdD870D138DC6081E664c5127226e815cc4C6f87D` | [View](https://sepolia.etherscan.io/address/0xdD870D138DC6081E664c5127226e815cc4C6f87D) |
-| **XPoint** | `0x2eDf302548B23e9F599e483aE79cda6D8774c6fC` | [View](https://sepolia.etherscan.io/address/0x2eDf302548B23e9F599e483aE79cda6D8774c6fC) |
-| **XPointMint** | `0x24FC91c3895042ABaCD0245eC8edD521BB8a29da` | [View](https://sepolia.etherscan.io/address/0x24FC91c3895042ABaCD0245eC8edD521BB8a29da) |
+| **JAPoint** | `0x2eDf302548B23e9F599e483aE79cda6D8774c6fC` | [View](https://sepolia.etherscan.io/address/0x2eDf302548B23e9F599e483aE79cda6D8774c6fC) |
+| **JAPointMint** | `0x24FC91c3895042ABaCD0245eC8edD521BB8a29da` | [View](https://sepolia.etherscan.io/address/0x24FC91c3895042ABaCD0245eC8edD521BB8a29da) |
 | **JPYDWrapper** | `0xa30042F978913cE9B466e204E7F729AeBCb3c624` | [View](https://sepolia.etherscan.io/address/0xa30042F978913cE9B466e204E7F729AeBCb3c624) |
 | **Transfer10** | `0xA3963E928B35Ac06cC519b2a1BbBc3F27aCf0460` | [View](https://sepolia.etherscan.io/address/0xA3963E928B35Ac06cC519b2a1BbBc3F27aCf0460) |
 | **Transfer5** | `0x74F6CfD89751a677E74130752483a530e27D4819` | [View](https://sepolia.etherscan.io/address/0x74F6CfD89751a677E74130752483a530e27D4819) |
@@ -336,9 +336,9 @@ cast send <JPYD_ADDRESS> \
 ```
 
 **Result:**
-- You automatically receive: 100 XPT (1% reward)
+- You automatically receive: 100 JAPT (1% reward)
 - Shop receives: 9,900 JPYD (99% payment)
-- Company receives: 100 JPYD (from XPointMint)
+- Company receives: 100 JPYD (from JAPointMint)
 - All in one transaction!
 
 **Important**: Set gas limit to 500,000+ for automatic processing
@@ -359,9 +359,9 @@ cast send <JPYD_ADDRESS> \
 ```
 
 **Result:**
-- You automatically receive: 50 XPT (0.5% reward)
+- You automatically receive: 50 JAPT (0.5% reward)
 - Shop receives: 9,950 JPYD (99.5% payment)
-- Company receives: 50 JPYD (from XPointMint)
+- Company receives: 50 JPYD (from JAPointMint)
 - All in one transaction!
 
 **Important**: Set gas limit to 500,000+ for automatic processing
@@ -385,22 +385,22 @@ cast send <TRANSFER10_ADDRESS> \
   --rpc-url $RPC_URL
 ```
 
-### Direct XPoint Exchange
+### Direct JAPoint Exchange
 
-Exchange JPYD for XPT directly:
+Exchange JPYD for JAPT directly:
 
 ```bash
-# 1. Approve JPYD to XPointMint
+# 1. Approve JPYD to JAPointMint
 cast send <JPYD_ADDRESS> \
   "approve(address,uint256)" \
-  <XPOINTMINT_ADDRESS> \
+  <JAPOINTMINT_ADDRESS> \
   1000000000000000000000 \
   --private-key $PRIVATE_KEY \
   --rpc-url $RPC_URL
 
-# 2. Get XPoint (JPYD goes to company)
-cast send <XPOINTMINT_ADDRESS> \
-  "transferXPoint(address)" \
+# 2. Get JAPoint (JPYD goes to company)
+cast send <JAPOINTMINT_ADDRESS> \
+  "transferJAPoint(address)" \
   <RECIPIENT_ADDRESS> \
   --private-key $PRIVATE_KEY \
   --rpc-url $RPC_URL
@@ -416,27 +416,27 @@ cast call <JPYD_ADDRESS> \
   --rpc-url $RPC_URL
 ```
 
-Check XPoint balance:
+Check JAPoint balance:
 ```bash
-cast call <XPOINT_ADDRESS> \
+cast call <JAPOINT_ADDRESS> \
   "balanceOf(address)(uint256)" \
   <WALLET_ADDRESS> \
   --rpc-url $RPC_URL
 ```
 
-Check XPointMint reserve:
+Check JAPointMint reserve:
 ```bash
-cast call <XPOINT_ADDRESS> \
+cast call <JAPOINT_ADDRESS> \
   "balanceOf(address)(uint256)" \
-  <XPOINTMINT_ADDRESS> \
+  <JAPOINTMINT_ADDRESS> \
   --rpc-url $RPC_URL
 ```
 
 ### Admin Functions
 
-Update company address (XPointMint owner only):
+Update company address (JAPointMint owner only):
 ```bash
-cast send <XPOINTMINT_ADDRESS> \
+cast send <JAPOINTMINT_ADDRESS> \
   "updateCompanyAddress(address)" \
   <NEW_COMPANY_ADDRESS> \
   --private-key $PRIVATE_KEY \
@@ -457,7 +457,7 @@ cast send <TRANSFER10_ADDRESS> \
 ### Automatic Payment Flow (via transfer)
 
 ```
-User                 JPYD                Transfer10          XPointMint         XPoint        Company/Shop
+User                 JPYD                Transfer10          JAPointMint         JAPoint        Company/Shop
   |                    |                      |                   |                 |                |
   |--transfer(T10)---->|                      |                   |                 |                |
   |  (500 JPYD)        |                      |                   |                 |                |
@@ -473,14 +473,14 @@ User                 JPYD                Transfer10          XPointMint         
   |                    |                      |                   |                 |                |
   |                    |                      |--approve(5)------>|                 |                |
   |                    |                      |                   |                 |                |
-  |                    |                      |--transferXPoint-->|                 |                |
+  |                    |                      |--transferJAPoint-->|                 |                |
   |                    |                      |  (sender)         |                 |                |
   |                    |                      |                   |                 |                |
   |                    |                      |                   |--transferFrom->|                 |
   |                    |<--JPYD(5)------------|                   |(from T10)      |                |
   |                    |                      |                   |                |                |
   |                    |                      |                   |--transfer----->|                |
-  |<--XPT(5)-------------------------------------------(reward)---|                |                |
+  |<--JAPT(5)-------------------------------------------(reward)---|                |                |
   |                    |                      |                   |                |                |
   |                    |                      |                   |--transfer JPYD(5)----------->|  |
   |                    |                      |                   |                |          (Company)
@@ -496,7 +496,7 @@ User                 JPYD                Transfer10          XPointMint         
 ### Manual Payment Flow (via deposit)
 
 ```
-User                  Transfer10            XPointMint         XPoint        Company/Shop
+User                  Transfer10            JAPointMint         JAPoint        Company/Shop
   |                        |                     |               |                |
   |--approve JPYD--------->|                     |               |                |
   |                        |                     |               |                |
@@ -507,13 +507,13 @@ User                  Transfer10            XPointMint         XPoint        Com
   |                        |                     |               |                |
   |                        |--approve(5)-------->|               |                |
   |                        |                     |               |                |
-  |                        |--transferXPoint---->|               |                |
+  |                        |--transferJAPoint---->|               |                |
   |                        |  (sender)           |               |                |
   |                        |                     |               |                |
   |                        |                     |--transferFrom>|                |
-  |                        |                     |(5 XPT from    |                |
+  |                        |                     |(5 JAPT from    |                |
   |                        |                     | reserve)      |                |
-  |<----XPT reward (5)-------------------------|               |                |
+  |<----JAPT reward (5)-------------------------|               |                |
   |                        |                     |               |                |
   |                        |                     |--transfer JPYD(5)------------>|
   |                        |                     |               |          (Company)
@@ -528,14 +528,14 @@ User                  Transfer10            XPointMint         XPoint        Com
 |-----------|----------|-------|
 | Automatic processing (transfer) | ~186,728 | Set gas limit to 500,000+ |
 | Manual deposit() | ~155,000 | Approximate |
-| Direct transferXPoint() | ~120,000 | Approximate |
+| Direct transferJAPoint() | ~120,000 | Approximate |
 
 Gas savings from transfer-based architecture: **~2.2%** reduction compared to mint-per-transaction.
 
 ## Security Considerations
 
-- **Pre-minted reserve**: XPointMint holds 1T XPT - ensure sufficient reserve for expected usage
-- **Approval required**: Users must approve JPYD before using `deposit()`, `processPayment()`, or `transferXPoint()` methods
+- **Pre-minted reserve**: JAPointMint holds 1T JAPT - ensure sufficient reserve for expected usage
+- **Approval required**: Users must approve JPYD before using `deposit()`, `processPayment()`, or `transferJAPoint()` methods
 - **Automatic transfer**: Direct `transfer()` to Transfer10 or Transfer5 doesn't require approval but needs gas limit 500,000+
 - **Gas limit for automatic processing**: Automatic processing via transfer requires gas limit set to 500,000+
 - **Address management**: Company and shop addresses can be updated by contract owner
@@ -562,13 +562,13 @@ Transfer10 contract:
 - Processes payment distribution in same transaction
 - Emits events for tracking
 
-### XPointMint Reserve System
+### JAPointMint Reserve System
 
-- Mints 1 trillion XPT to XPointMint at deployment
+- Mints 1 trillion JAPT to JAPointMint at deployment
 - Uses `transfer()` instead of per-transaction `mint()`
 - Gas savings: no ownership transfer or mint permissions needed
-- More secure: XPointMint doesn't need to be owner of XPoint
-- Reserve can be monitored via `balanceOf(XPointMint)`
+- More secure: JAPointMint doesn't need to be owner of JAPoint
+- Reserve can be monitored via `balanceOf(JAPointMint)`
 
 ## Development
 
@@ -594,17 +594,17 @@ forge clean
 ├── src/
 │   ├── JPYD.sol              # Standard ERC20-compliant JPY-pegged stablecoin (only mint, decimals added)
 │   ├── JPYDWrapper.sol       # Auto-notification wrapper for JPYD/JPYC
-│   ├── XPoint.sol            # XA Point reward token
-│   ├── XPointMint.sol        # Transfer-based JPYD → XPoint exchange
+│   ├── JAPoint.sol            # XA Point reward token
+│   ├── JAPointMint.sol        # Transfer-based JPYD → JAPoint exchange
 │   ├── Transfer10.sol        # Payment processing with auto-reward (1% reward)
 │   ├── Transfer5.sol         # Payment processing with auto-reward (0.5% reward)
 │   ├── ITokenReceiver.sol    # Interface for automatic notification
 ├── test/
 │   ├── JPYD.t.sol            # JPYD tests
-│   ├── XPointMint.t.sol      # XPoint and XPointMint tests
+│   ├── JAPointMint.t.sol      # JAPoint and JAPointMint tests
 │   └── Transfer10.t.sol      # Transfer10 tests (including automatic processing)
 ├── script/
-│   └── DeployFullSystem.s.sol        # All contracts (JPYD, XPoint, XPointMint, JPYDWrapper, Transfer10, Transfer5) with 1T XPT reserve
+│   └── DeployFullSystem.s.sol        # All contracts (JPYD, JAPoint, JAPointMint, JPYDWrapper, Transfer10, Transfer5) with 1T JAPT reserve
 ├── foundry.toml              # Foundry configuration
 └── README.md
 ```
@@ -616,39 +616,39 @@ forge clean
 2. Sends 10,000 JPYD to Transfer10 contract address
 3. **Everything processed automatically in 1 transaction:**
    - Shop receives 9,900 JPYD (99%)
-   - Customer receives 100 XPT (1% reward)
+   - Customer receives 100 JAPT (1% reward)
    - Company receives 100 JPYD
-4. Customer can immediately see XPT reward in wallet
+4. Customer can immediately see JAPT reward in wallet
 
 ### Scenario 2: E-commerce Integration
 1. E-commerce site displays Transfer10 address as payment destination
 2. Customer sends JPYD from any wallet (gas limit 500,000+)
 3. Backend monitors `PaymentProcessed` event
 4. Order automatically confirmed when event detected
-5. Customer automatically receives loyalty points (XPT)
+5. Customer automatically receives loyalty points (JAPT)
 
-### Scenario 3: Direct XPoint Purchase
-1. User wants to buy XPoint with JPYD
-2. User approves and calls `transferXPoint()`
-3. User receives XPT from pre-minted reserve
+### Scenario 3: Direct JAPoint Purchase
+1. User wants to buy JAPoint with JPYD
+2. User approves and calls `transferJAPoint()`
+3. User receives JAPT from pre-minted reserve
 4. Company receives JPYD
 5. No new tokens minted (gas efficient)
 
 ### Scenario 4: Accumulate Rewards with Multiple Payments
 1. Customer makes multiple purchases via Transfer10
-2. Each purchase automatically earns 1% XPT reward
+2. Each purchase automatically earns 1% JAPT reward
 3. Rewards accumulate in customer's wallet
-4. Customer can trade or use accumulated XPT
+4. Customer can trade or use accumulated JAPT
 
 ## Comparison: Before and After Optimization
 
 | Feature | Before (Mint) | After (Transfer) |
 |---------|--------------|------------------|
-| XPoint Distribution | Mint per transaction | Transfer from reserve |
+| JAPoint Distribution | Mint per transaction | Transfer from reserve |
 | Gas Cost | ~190,924 | ~186,728 (-2.2%) |
-| XPointMint Ownership | Must own XPoint | No ownership needed |
-| Reserve | N/A | 1 trillion XPT |
-| Function Name | `mint()` | `transferXPoint()` |
+| JAPointMint Ownership | Must own JAPoint | No ownership needed |
+| Reserve | N/A | 1 trillion JAPT |
+| Function Name | `mint()` | `transferJAPoint()` |
 | Security | Owner-controlled | Simpler, more secure |
 
 ## Troubleshooting
@@ -661,9 +661,9 @@ forge clean
 - **Solution**: Only send JPYD tokens to Transfer10, not other tokens
 - Transfer10 only accepts JPYD for automatic processing
 
-### "Insufficient XPoint reserve" Error
-- **Solution**: XPointMint reserve depleted, need to add more XPT
-- Check reserve: `cast call <XPOINT> "balanceOf(address)" <XPOINTMINT>`
+### "Insufficient JAPoint reserve" Error
+- **Solution**: JAPointMint reserve depleted, need to add more JAPT
+- Check reserve: `cast call <JAPOINT> "balanceOf(address)" <JAPOINTMINT>`
 
 ### Automatic Processing Not Triggered
 - **Solution**: Ensure using `transfer()` not `transferFrom()`
