@@ -324,24 +324,49 @@
         document.getElementById('shopName').textContent = config.shopName;
 
         async function connectWallet() {
+            console.log('=== connectWallet called ===');
             try {
+                // Check if ethers.js is loaded
+                console.log('ethers available:', typeof ethers !== 'undefined');
+                if (typeof ethers === 'undefined') {
+                    showStatus('エラー: ethers.jsライブラリが読み込まれていません。ページを再読み込みしてください。', 'error');
+                    return;
+                }
+
+                // Check if MetaMask is available
+                console.log('window.ethereum available:', typeof window.ethereum !== 'undefined');
+                console.log('window.ethereum:', window.ethereum);
+
                 if (typeof window.ethereum === 'undefined') {
                     showStatus('MetaMaskがインストールされていません。MetaMask Mobileのブラウザで開いてください。', 'error');
                     return;
                 }
 
                 // Check if addresses are provided
+                console.log('config:', config);
+                console.log('jpydAddress:', config.jpydAddress);
+                console.log('wrapperAddress:', config.wrapperAddress);
+                console.log('targetAddress:', config.targetAddress);
+
                 if (!config.jpydAddress || !config.wrapperAddress || !config.targetAddress) {
                     showStatus('エラー: コントラクトアドレスがURLパラメータに含まれていません', 'error');
                     return;
                 }
 
+                console.log('Creating Web3Provider...');
                 provider = new ethers.providers.Web3Provider(window.ethereum);
+
+                console.log('Requesting accounts...');
+                showStatus('MetaMaskに接続中...', 'info');
                 await provider.send("eth_requestAccounts", []);
+
+                console.log('Getting signer...');
                 signer = provider.getSigner();
                 userAddress = await signer.getAddress();
+                console.log('Connected address:', userAddress);
 
                 // Initialize contracts
+                console.log('Initializing contracts...');
                 jpydContract = new ethers.Contract(config.jpydAddress, JPYD_ABI, provider);
                 wrapperContract = new ethers.Contract(config.wrapperAddress, WRAPPER_ABI, signer);
                 if (config.japtAddress) {
@@ -353,11 +378,16 @@
                 document.getElementById('paymentSection').classList.remove('hidden');
 
                 // Load balances
+                console.log('Loading balances...');
                 await updateBalances();
 
                 showStatus('接続完了！金額を入力して支払いを開始してください', 'success');
+                console.log('=== Connection successful ===');
             } catch (error) {
-                console.error(error);
+                console.error('=== Connection error ===');
+                console.error('Error details:', error);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
                 showStatus('接続エラー: ' + error.message, 'error');
             }
         }
@@ -501,13 +531,35 @@
             status.innerHTML = message;
         }
 
-        // Auto-connect if on mobile
+        // Diagnostic check on page load
         window.addEventListener('load', async () => {
+            console.log('=== Page loaded ===');
+            console.log('ethers.js loaded:', typeof ethers !== 'undefined');
+            console.log('window.ethereum:', window.ethereum);
+            console.log('MetaMask detected:', window.ethereum && window.ethereum.isMetaMask);
+
+            // Show diagnostic info
+            if (typeof ethers === 'undefined') {
+                showStatus('⚠️ ethers.jsの読み込みに失敗しました。ページを再読み込みしてください。', 'error');
+                return;
+            }
+
+            if (!window.ethereum) {
+                showStatus('⚠️ MetaMask Mobileのブラウザで開いてください。', 'error');
+                return;
+            }
+
+            // Auto-connect if on mobile and already connected
             if (window.ethereum && window.ethereum.isMetaMask) {
-                // Check if already connected
-                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-                if (accounts.length > 0) {
-                    await connectWallet();
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    console.log('Already connected accounts:', accounts);
+                    if (accounts.length > 0) {
+                        console.log('Auto-connecting...');
+                        await connectWallet();
+                    }
+                } catch (error) {
+                    console.error('Auto-connect error:', error);
                 }
             }
         });
