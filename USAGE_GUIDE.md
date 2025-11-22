@@ -1,24 +1,51 @@
 # JAPOINT システム使用ガイド
 
-## メタマスクから送金する方法
+## 📱 モバイル決済（最も簡単）
+
+JAPOINTシステムは既にSepoliaテストネットにデプロイ済みです。
+
+### クイックスタート
+
+1. **MetaMask Mobileで以下のURLを開く**:
+   ```
+   https://kkuejo.github.io/japoint-payment/mobile-payment.html?shop=テストショップ（1%）&type=transfer10&jpyd=0xdD870D138DC6081E664c5127226e815cc4C6f87D&wrapper=0xa30042F978913cE9B466e204E7F729AeBCb3c624&target=0xA3963E928B35Ac06cC519b2a1BbBc3F27aCf0460&japt=0x2eDf302548B23e9F599e483aE79cda6D8774c6fC
+   ```
+
+2. **「MetaMaskで接続」をタップ**
+
+3. **金額を入力して「支払う」をタップ**
+
+4. **署名を承認** → 完了！JAPTが自動的に付与されます
+
+---
+
+## 💻 MetaMaskから送金する方法
 
 ### 事前準備
 
 1. **MetaMaskをインストール**
    - https://metamask.io/ からインストール
 
-2. **ネットワークを追加**（ローカルテストの場合）
-   - ネットワーク名: Anvil Local
-   - RPC URL: http://localhost:8545
-   - チェーンID: 31337
+2. **Sepoliaネットワークを追加**
+   - ネットワーク名: Sepolia Test Network
+   - RPC URL: https://ethereum-sepolia-rpc.publicnode.com
+   - チェーンID: 11155111
    - 通貨記号: ETH
+   - Block Explorer: https://sepolia.etherscan.io
 
-3. **JPYDトークンをMetaMaskに追加**
+3. **Sepolia ETHを取得**
+   - Faucet: https://sepoliafaucet.com/
+
+4. **JPYDトークンをMetaMaskに追加**
    - MetaMaskで「トークンをインポート」
-   - トークンコントラクトアドレス: （デプロイ後のJPYDアドレス）
+   - トークンアドレス: `0xdD870D138DC6081E664c5127226e815cc4C6f87D`
+   - シンボル: JPYD
+   - 小数点: 18
 
-4. **JAPTトークンをMetaMaskに追加**
-   - トークンコントラクトアドレス: （デプロイ後のJAPTアドレス）
+5. **JAPTトークンをMetaMaskに追加**
+   - トークンアドレス: `0x2eDf302548B23e9F599e483aE79cda6D8774c6fC`
+   - シンボル: JAPT
+   - 小数点: 18
 
 ---
 
@@ -140,7 +167,23 @@ console.log("完了！JAPTを受け取りました！");
 
 ---
 
-## デプロイ手順（本番環境）
+## 📦 既存のSepoliaデプロイメント
+
+すぐに使用できるコントラクトアドレス：
+
+| コントラクト | アドレス |
+|------------|---------|
+| **JPYD** | `0xdD870D138DC6081E664c5127226e815cc4C6f87D` |
+| **JAPoint** | `0x2eDf302548B23e9F599e483aE79cda6D8774c6fC` |
+| **JPYDWrapper** | `0xa30042F978913cE9B466e204E7F729AeBCb3c624` |
+| **Transfer10** | `0xA3963E928B35Ac06cC519b2a1BbBc3F27aCf0460` |
+| **Transfer5** | `0x74F6CfD89751a677E74130752483a530e27D4819` |
+
+詳細: [DEPLOYMENT.md](DEPLOYMENT.md)
+
+---
+
+## 🚀 新しくデプロイする場合
 
 ### 1. 環境変数を設定
 
@@ -152,7 +195,6 @@ cp .env.example .env
 `.env`を編集:
 ```
 PRIVATE_KEY=あなたの秘密鍵
-SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY
 COMPANY_ADDRESS=会社のウォレットアドレス
 SHOP_ADDRESS=ショップのウォレットアドレス
 ```
@@ -160,25 +202,17 @@ SHOP_ADDRESS=ショップのウォレットアドレス
 ### 2. デプロイを実行
 
 ```bash
+source .env
+
 # Sepoliaテストネットにデプロイ
-forge script script/DeployFullSystem.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast --verify
-
-# または、ローカル環境でテスト
-anvil  # 別のターミナルで実行
-forge script script/TestAutomation.s.sol --rpc-url http://localhost:8545 --broadcast
+forge script script/DeployFullSystem.s.sol \
+  --rpc-url sepolia \
+  --broadcast \
+  --slow \
+  --legacy
 ```
 
-### 3. デプロイされたアドレスを確認
-
-デプロイ後、コンソールに表示されるアドレスをメモ:
-```
-JPYD: 0x...
-JAPoint: 0x...
-JAPointMint: 0x...
-JPYDWrapper: 0x...
-Transfer10: 0x...
-Transfer5: 0x...
-```
+詳細な手順: [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)
 
 ---
 

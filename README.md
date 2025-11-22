@@ -271,36 +271,51 @@ cast send <JPYD_ADDRESS> \
   --gas-limit 500000
 ```
 
-## Sepoliaテストネットへのデプロイ
+## 🌐 Sepoliaテストネットデプロイメント
 
-### 1. 環境変数の設定
+### 現在のデプロイ済みコントラクト（2025-11-22）
 
-デプロイ前に以下の環境変数を設定してください:
+JAPOINTシステムはSepoliaテストネットで稼働中です：
+
+| コントラクト | アドレス | Etherscan |
+|------------|---------|-----------|
+| **JPYD** | `0xdD870D138DC6081E664c5127226e815cc4C6f87D` | [View](https://sepolia.etherscan.io/address/0xdD870D138DC6081E664c5127226e815cc4C6f87D) |
+| **JAPoint** | `0x2eDf302548B23e9F599e483aE79cda6D8774c6fC` | [View](https://sepolia.etherscan.io/address/0x2eDf302548B23e9F599e483aE79cda6D8774c6fC) |
+| **JAPointMint** | `0x24FC91c3895042ABaCD0245eC8edD521BB8a29da` | [View](https://sepolia.etherscan.io/address/0x24FC91c3895042ABaCD0245eC8edD521BB8a29da) |
+| **JPYDWrapper** | `0xa30042F978913cE9B466e204E7F729AeBCb3c624` | [View](https://sepolia.etherscan.io/address/0xa30042F978913cE9B466e204E7F729AeBCb3c624) |
+| **Transfer10** | `0xA3963E928B35Ac06cC519b2a1BbBc3F27aCf0460` | [View](https://sepolia.etherscan.io/address/0xA3963E928B35Ac06cC519b2a1BbBc3F27aCf0460) |
+| **Transfer5** | `0x74F6CfD89751a677E74130752483a530e27D4819` | [View](https://sepolia.etherscan.io/address/0x74F6CfD89751a677E74130752483a530e27D4819) |
+
+**モバイル決済URL**: https://kkuejo.github.io/japoint-payment/
+
+詳細情報: [DEPLOYMENT.md](DEPLOYMENT.md) | [セットアップ手順](SETUP_INSTRUCTIONS.md) | [使用ガイド](USAGE_GUIDE.md)
+
+### 新しくデプロイする場合
+
+#### 1. 環境変数の設定
 
 ```bash
 export PRIVATE_KEY=your_private_key_here
-export SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your_api_key
-export ETHERSCAN_API_KEY=your_etherscan_api_key
-export INITIAL_JPYD_SUPPLY=10000000000000000000000000  # 10M JPYD
-export JAPOINT_RESERVE=1000000000000000000000000000000  # 1T JAPT (デフォルト)
 export COMPANY_ADDRESS=your_company_address_here
 export SHOP_ADDRESS=your_shop_address_here
 ```
 
-または、プロジェクトルートに`.env`ファイルを作成してこれらの変数を設定することもできます（`.env`を`.gitignore`に追加することを忘れずに）。
+または、`.env`ファイルを作成（`.gitignore`に追加済み）。
 
-### 2. 完全なシステムをデプロイ
+#### 2. Sepolia ETHを取得
 
-すべてのコントラクト（JPYD、JAPoint、JAPointMint、Transfer10、Transfer5）をデプロイ:
+Faucet: https://sepoliafaucet.com/
+
+#### 3. デプロイ実行
+
 ```bash
-# .envファイルを使用する場合、まず読み込んでください:
-# source .env
+source .env
 
-forge script script/DeployFullSystem.s.sol:DeployFullSystem \
-  --rpc-url $SEPOLIA_RPC_URL \
+forge script script/DeployFullSystem.s.sol \
+  --rpc-url sepolia \
   --broadcast \
-  --verify \
-  -vvvv
+  --slow \
+  --legacy
 ```
 
 ## 使用例

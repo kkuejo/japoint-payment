@@ -1,6 +1,24 @@
-# 🚀 Sepoliaデプロイ - セットアップ手順
+# 🚀 JAPOINT Sepoliaデプロイ - セットアップ手順
 
-## 📋 必要な準備
+## ✅ 既存のデプロイメント（すぐに使用可能）
+
+JAPOINTシステムは既にSepoliaテストネットにデプロイ済みです：
+
+| コントラクト | アドレス |
+|------------|---------|
+| **JPYD** | `0xdD870D138DC6081E664c5127226e815cc4C6f87D` |
+| **JAPoint** | `0x2eDf302548B23e9F599e483aE79cda6D8774c6fC` |
+| **JPYDWrapper** | `0xa30042F978913cE9B466e204E7F729AeBCb3c624` |
+| **Transfer10** | `0xA3963E928B35Ac06cC519b2a1BbBc3F27aCf0460` |
+| **Transfer5** | `0x74F6CfD89751a677E74130752483a530e27D4819` |
+
+**モバイル決済URL**: https://kkuejo.github.io/japoint-payment/
+
+詳細: [DEPLOYMENT.md](DEPLOYMENT.md)
+
+---
+
+## 📋 新しくデプロイする場合の準備
 
 ### 1. Sepolia ETHを取得
 
@@ -14,21 +32,22 @@
 
 ---
 
-### 2. Alchemy APIキーを取得（無料）
+### 2. RPC URLの選択
 
-#### 手順:
+以下のいずれかのRPC URLを使用できます：
 
+#### オプション1: Public RPC（無料・APIキー不要）
+```
+https://ethereum-sepolia-rpc.publicnode.com
+```
+
+#### オプション2: Alchemy（無料・要APIキー）
 1. https://www.alchemy.com/ にアクセス
-2. 「Sign Up」をクリック
-3. 無料アカウントを作成
-4. ダッシュボードで「Create App」をクリック
-5. 以下を選択：
-   - Chain: **Ethereum**
-   - Network: **Sepolia**
-   - App Name: JAPOINT（任意）
-6. 作成後、「View Key」をクリック
-7. **HTTPS URL**をコピー
-   - 例: `https://eth-sepolia.g.alchemy.com/v2/abcd1234...`
+2. 無料アカウントを作成
+3. Sepolia用のアプリを作成
+4. API KeyをコピーしてURL作成: `https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY`
+
+**推奨**: Public RPCを使用（APIキー不要で簡単）
 
 ---
 
@@ -88,21 +107,17 @@ nano .env
 # デプロイ用ウォレットの秘密鍵
 PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
 
-# Alchemy RPC URL
-SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_API_KEY
-
-# Etherscan API key（オプション、コントラクト認証用）
-ETHERSCAN_API_KEY=YOUR_ETHERSCAN_API_KEY
-
 # 会社のウォレットアドレス（手数料受取先）
 COMPANY_ADDRESS=0xYOUR_COMPANY_ADDRESS
 
 # ショップのウォレットアドレス（売上受取先）
 SHOP_ADDRESS=0xYOUR_SHOP_ADDRESS
 
-# 初期JPYD供給量（オプション）
-INITIAL_JPYD_SUPPLY=10000000000000000000000000
+# Etherscan API key（オプション、コントラクト認証用）
+ETHERSCAN_API_KEY=YOUR_ETHERSCAN_API_KEY
 ```
+
+**注意**: RPC URLは`foundry.toml`で設定済みのため、`.env`には不要です。
 
 保存: Ctrl+O → Enter → Ctrl+X
 
@@ -128,10 +143,20 @@ cat .env
 source .env
 
 forge script script/DeployFullSystem.s.sol \
-  --rpc-url $SEPOLIA_RPC_URL \
+  --rpc-url sepolia \
+  --broadcast \
+  --slow \
+  --legacy
+```
+
+**オプション**: Etherscanでの検証を含める場合:
+```bash
+forge script script/DeployFullSystem.s.sol \
+  --rpc-url sepolia \
   --broadcast \
   --verify \
-  -vvv
+  --slow \
+  --legacy
 ```
 
 デプロイには数分かかります。完了すると、以下のアドレスが表示されます：

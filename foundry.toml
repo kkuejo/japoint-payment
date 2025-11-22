@@ -6,4 +6,14 @@ remappings = [
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
 ]
 
+# Network configurations
+[rpc_endpoints]
+sepolia = "https://ethereum-sepolia-rpc.publicnode.com"
+polygon_amoy = "https://rpc-amoy.polygon.technology/"
+
+# Etherscan verification
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+polygon_amoy = { key = "${POLYGONSCAN_API_KEY}", url = "https://api-amoy.polygonscan.com/api" }
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
