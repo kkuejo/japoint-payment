@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ボタンテスト</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            display: none;
+        }
+        .message.show {
+            display: block;
+        }
+        .success {
+            background: #e8f5e9;
+            border: 2px solid #4CAF50;
+            color: #2e7d32;
+        }
+        .info {
+            background: #e3f2fd;
+            border: 2px solid #2196F3;
+            color: #1565c0;
+        }
+        .log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .log-entry.success {
+            color: #2e7d32;
+        }
+        .log-entry.error {
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 ボタン動作テスト</h1>
+
+        <p style="color: #666; margin-bottom: 20px;">
+            このページは、ボタンが正しく機能するかテストします。<br>
+            下のボタンをタップしてください。
+        </p>
+
+        <button id="testButton">
+            👆 このボタンをタップ
+        </button>
+
+        <div id="message" class="message">
+            メッセージがここに表示されます
+        </div>
+
+        <div class="log" id="log">
+            <strong>📋 ログ:</strong>
+            <div id="logEntries"></div>
+        </div>
+    </div>
+
+    <script>
+        let tapCount = 0;
+
+        function addLog(message, isError = false) {
+            const time = new Date().toLocaleTimeString();
+            const logEntries = document.getElementById('logEntries');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry ' + (isError ? 'error' : 'success');
+            entry.textContent = `[${time}] ${message}`;
+            logEntries.appendChild(entry);
+
+            // Auto scroll to bottom
+            const logDiv = document.getElementById('log');
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function showMessage(text, type = 'success') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = 'message show ' + type;
+        }
+
+        // Log on page load
+        window.addEventListener('load', () => {
+            addLog('✅ ページ読み込み完了');
+            addLog('✅ JavaScriptが動作しています');
+
+            // Check for MetaMask
+            if (typeof window.ethereum !== 'undefined') {
+                addLog('✅ window.ethereum検出（MetaMaskあり）');
+                if (window.ethereum.isMetaMask) {
+                    addLog('✅ MetaMask確認済み');
+                }
+            } else {
+                addLog('❌ window.ethereum未検出（MetaMaskなし）', true);
+            }
+
+            // Setup button
+            const button = document.getElementById('testButton');
+            if (button) {
+                addLog('✅ ボタン要素を取得しました');
+
+                // Add click event listener
+                button.addEventListener('click', () => {
+                    tapCount++;
+                    addLog(`🔘 ボタンがタップされました！（${tapCount}回目）`);
+                    showMessage(`ボタンが正常に動作しています！（タップ回数: ${tapCount}回）`, 'success');
+
+                    // Vibrate if supported
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                });
+
+                addLog('✅ クリックイベントリスナー設定完了');
+                addLog('👆 上のボタンをタップしてテストしてください');
+            } else {
+                addLog('❌ ボタン要素が見つかりません', true);
+            }
+        });
+
+        // Log any JavaScript errors
+        window.addEventListener('error', (event) => {
+            addLog('❌ JavaScriptエラー: ' + event.message, true);
+        });
+    </script>
+</body>
+</html>
