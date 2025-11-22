@@ -234,11 +234,14 @@
         </div>
 
         <div id="walletSection">
-            <button class="connect-button" onclick="connectWallet()">
+            <button class="connect-button" id="connectButton">
                 📱 MetaMaskで接続
             </button>
             <div class="wallet-info">
                 MetaMask Mobileのブラウザで開いてください
+            </div>
+            <div id="diagnosticInfo" style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 5px; font-size: 12px; display: none;">
+                <div id="diagnosticText"></div>
             </div>
         </div>
 
@@ -325,22 +328,27 @@
 
         async function connectWallet() {
             console.log('=== connectWallet called ===');
+            showDiagnostic('🔄 connectWallet関数が呼び出されました');
             try {
                 // Check if ethers.js is loaded
                 console.log('ethers available:', typeof ethers !== 'undefined');
                 if (typeof ethers === 'undefined') {
+                    showDiagnostic('❌ ethers.js未読み込み', true);
                     showStatus('エラー: ethers.jsライブラリが読み込まれていません。ページを再読み込みしてください。', 'error');
                     return;
                 }
+                showDiagnostic('✅ ethers.js確認OK');
 
                 // Check if MetaMask is available
                 console.log('window.ethereum available:', typeof window.ethereum !== 'undefined');
                 console.log('window.ethereum:', window.ethereum);
 
                 if (typeof window.ethereum === 'undefined') {
+                    showDiagnostic('❌ window.ethereum未検出', true);
                     showStatus('MetaMaskがインストールされていません。MetaMask Mobileのブラウザで開いてください。', 'error');
                     return;
                 }
+                showDiagnostic('✅ window.ethereum確認OK');
 
                 // Check if addresses are provided
                 console.log('config:', config);
@@ -349,29 +357,39 @@
                 console.log('targetAddress:', config.targetAddress);
 
                 if (!config.jpydAddress || !config.wrapperAddress || !config.targetAddress) {
+                    showDiagnostic('❌ コントラクトアドレス不足', true);
                     showStatus('エラー: コントラクトアドレスがURLパラメータに含まれていません', 'error');
                     return;
                 }
+                showDiagnostic('✅ コントラクトアドレス確認OK');
 
                 console.log('Creating Web3Provider...');
+                showDiagnostic('🔄 Web3Provider作成中...');
                 provider = new ethers.providers.Web3Provider(window.ethereum);
+                showDiagnostic('✅ Web3Provider作成成功');
 
                 console.log('Requesting accounts...');
+                showDiagnostic('🔄 MetaMaskにアカウント接続要求中...');
                 showStatus('MetaMaskに接続中...', 'info');
                 await provider.send("eth_requestAccounts", []);
+                showDiagnostic('✅ アカウント接続許可取得');
 
                 console.log('Getting signer...');
+                showDiagnostic('🔄 Signer取得中...');
                 signer = provider.getSigner();
                 userAddress = await signer.getAddress();
                 console.log('Connected address:', userAddress);
+                showDiagnostic('✅ 接続成功: ' + userAddress.substring(0, 10) + '...');
 
                 // Initialize contracts
                 console.log('Initializing contracts...');
+                showDiagnostic('🔄 コントラクト初期化中...');
                 jpydContract = new ethers.Contract(config.jpydAddress, JPYD_ABI, provider);
                 wrapperContract = new ethers.Contract(config.wrapperAddress, WRAPPER_ABI, signer);
                 if (config.japtAddress) {
                     japtContract = new ethers.Contract(config.japtAddress, JAPT_ABI, provider);
                 }
+                showDiagnostic('✅ コントラクト初期化完了');
 
                 // Show payment section
                 document.getElementById('walletSection').classList.add('hidden');
@@ -379,15 +397,19 @@
 
                 // Load balances
                 console.log('Loading balances...');
+                showDiagnostic('🔄 残高読み込み中...');
                 await updateBalances();
+                showDiagnostic('✅ 残高読み込み完了');
 
                 showStatus('接続完了！金額を入力して支払いを開始してください', 'success');
+                showDiagnostic('🎉 接続プロセス完了！');
                 console.log('=== Connection successful ===');
             } catch (error) {
                 console.error('=== Connection error ===');
                 console.error('Error details:', error);
                 console.error('Error message:', error.message);
                 console.error('Error stack:', error.stack);
+                showDiagnostic('❌ エラー: ' + error.message, true);
                 showStatus('接続エラー: ' + error.message, 'error');
             }
         }
@@ -531,22 +553,60 @@
             status.innerHTML = message;
         }
 
+        // Diagnostic info display
+        function showDiagnostic(message, isError = false) {
+            const diagnosticDiv = document.getElementById('diagnosticInfo');
+            const textDiv = document.getElementById('diagnosticText');
+            diagnosticDiv.style.display = 'block';
+            diagnosticDiv.style.background = isError ? '#ffebee' : '#e3f2fd';
+            diagnosticDiv.style.border = isError ? '2px solid #f44336' : '2px solid #2196F3';
+
+            const time = new Date().toLocaleTimeString();
+            textDiv.innerHTML += `<div style="margin: 5px 0;">[${time}] ${message}</div>`;
+        }
+
         // Diagnostic check on page load
         window.addEventListener('load', async () => {
             console.log('=== Page loaded ===');
+            showDiagnostic('✅ ページ読み込み完了');
+
+            // Check ethers.js
             console.log('ethers.js loaded:', typeof ethers !== 'undefined');
+            if (typeof ethers === 'undefined') {
+                showDiagnostic('❌ ethers.jsが読み込まれていません', true);
+                showStatus('⚠️ ethers.jsの読み込みに失敗しました。ページを再読み込みしてください。', 'error');
+                return;
+            } else {
+                showDiagnostic('✅ ethers.js読み込み成功');
+            }
+
+            // Check window.ethereum
             console.log('window.ethereum:', window.ethereum);
             console.log('MetaMask detected:', window.ethereum && window.ethereum.isMetaMask);
 
-            // Show diagnostic info
-            if (typeof ethers === 'undefined') {
-                showStatus('⚠️ ethers.jsの読み込みに失敗しました。ページを再読み込みしてください。', 'error');
-                return;
-            }
-
             if (!window.ethereum) {
+                showDiagnostic('❌ window.ethereumが見つかりません', true);
                 showStatus('⚠️ MetaMask Mobileのブラウザで開いてください。', 'error');
                 return;
+            } else {
+                showDiagnostic('✅ window.ethereum検出成功');
+            }
+
+            if (window.ethereum.isMetaMask) {
+                showDiagnostic('✅ MetaMask検出成功');
+            }
+
+            // Setup button click listener
+            const connectBtn = document.getElementById('connectButton');
+            if (connectBtn) {
+                showDiagnostic('✅ 接続ボタンが見つかりました');
+                connectBtn.addEventListener('click', async () => {
+                    showDiagnostic('🔘 ボタンがタップされました！');
+                    await connectWallet();
+                });
+                showDiagnostic('✅ ボタンイベントリスナー設定完了');
+            } else {
+                showDiagnostic('❌ 接続ボタンが見つかりません', true);
             }
 
             // Auto-connect if on mobile and already connected
@@ -556,10 +616,14 @@
                     console.log('Already connected accounts:', accounts);
                     if (accounts.length > 0) {
                         console.log('Auto-connecting...');
+                        showDiagnostic('🔄 自動接続を試みています...');
                         await connectWallet();
+                    } else {
+                        showDiagnostic('👆 「MetaMaskで接続」ボタンをタップしてください');
                     }
                 } catch (error) {
                     console.error('Auto-connect error:', error);
+                    showDiagnostic('⚠️ 自動接続チェックでエラー: ' + error.message, true);
                 }
             }
         });
