@@ -5,29 +5,29 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./JAPointMint.sol";
 import "./ITokenReceiver.sol";
-import "./JPYDWrapper.sol";
+import "./JPYCWrapper.sol";
 
 /**
  * @title Transfer10
- * @dev Contract that receives JPYD and:
+ * @dev Contract that receives JPYC and:
  *      - Sends 1% to JAPointMint and mints JAPoint to the sender
  *      - Sends remaining 99% to ShopAddress
  *
- * Flow (Automatic - just send JPYD):
- * 1. User sends JPYD directly to this contract via MetaMask
+ * Flow (Automatic - just send JPYC):
+ * 1. User sends JPYC directly to this contract via MetaMask
  * 2. Contract automatically processes the payment
  * 3. Contract sends 1% to JAPointMint and mints JAPoint to sender
  * 4. Contract sends 99% to ShopAddress
  *
  * Alternative Flow (Manual):
- * 1. User approves JPYD to this contract
+ * 1. User approves JPYC to this contract
  * 2. User calls deposit(amount) or processPayment()
  */
 contract Transfer10 is Ownable, ITokenReceiver {
-    IERC20 public jpydToken;
+    IERC20 public jpycToken;
     JAPointMint public japointMint;
     address public shopAddress;
-    JPYDWrapper public jpydWrapper;
+    JPYCWrapper public jpycWrapper;
 
     event PaymentProcessed(
         address indexed sender,
@@ -40,57 +40,57 @@ contract Transfer10 is Ownable, ITokenReceiver {
 
     /**
      * @dev Constructor
-     * @param _jpydToken Address of JPYD token contract
+     * @param _jpycToken Address of JPYC token contract
      * @param _japointMint Address of JAPointMint contract
-     * @param _shopAddress Address to receive 99% of JPYD
-     * @param _jpydWrapper Address of JPYDWrapper contract (optional, can be address(0))
+     * @param _shopAddress Address to receive 99% of JPYC
+     * @param _jpycWrapper Address of JPYCWrapper contract (optional, can be address(0))
      */
     constructor(
-        address _jpydToken,
+        address _jpycToken,
         address _japointMint,
         address _shopAddress,
-        address _jpydWrapper
+        address _jpycWrapper
     ) Ownable(msg.sender) {
-        require(_jpydToken != address(0), "Invalid JPYD address");
+        require(_jpycToken != address(0), "Invalid JPYC address");
         require(_japointMint != address(0), "Invalid JAPointMint address");
         require(_shopAddress != address(0), "Invalid shop address");
 
-        jpydToken = IERC20(_jpydToken);
+        jpycToken = IERC20(_jpycToken);
         japointMint = JAPointMint(_japointMint);
         shopAddress = _shopAddress;
-        if (_jpydWrapper != address(0)) {
-            jpydWrapper = JPYDWrapper(_jpydWrapper);
+        if (_jpycWrapper != address(0)) {
+            jpycWrapper = JPYCWrapper(_jpycWrapper);
         }
     }
 
     /**
-     * @dev Deposit JPYD and automatically process payment (RECOMMENDED METHOD)
+     * @dev Deposit JPYC and automatically process payment (RECOMMENDED METHOD)
      * This function allows users to specify an amount and process it in one transaction.
      *
      * Usage:
-     * 1. User approves JPYD to this contract (can be done once for multiple deposits)
+     * 1. User approves JPYC to this contract (can be done once for multiple deposits)
      * 2. User calls deposit(amount) - everything happens automatically
      *
      * Requirements:
-     * - Caller must have approved JPYD tokens to this contract
+     * - Caller must have approved JPYC tokens to this contract
      * - Amount must be greater than 0
      *
      * Process:
-     * 1. Transfer specified JPYD amount from caller to this contract
+     * 1. Transfer specified JPYC amount from caller to this contract
      * 2. Calculate 1% for JAPointMint and 99% for shop
      * 3. Approve 1% to JAPointMint
      * 4. Call JAPointMint.mint() with sender's address as recipient
      * 5. Transfer 99% to shop address
      *
-     * @param amount Amount of JPYD to deposit and process
+     * @param amount Amount of JPYC to deposit and process
      */
     function deposit(uint256 amount) public {
         require(amount > 0, "Amount must be greater than 0");
 
-        // Transfer JPYD from caller to this contract
+        // Transfer JPYC from caller to this contract
         require(
-            jpydToken.transferFrom(msg.sender, address(this), amount),
-            "JPYD transfer failed"
+            jpycToken.transferFrom(msg.sender, address(this), amount),
+            "JPYC transfer failed"
         );
 
         // Process the payment internally
@@ -98,14 +98,14 @@ contract Transfer10 is Ownable, ITokenReceiver {
     }
 
     /**
-     * @dev Process payment by distributing JPYD (uses all approved amount)
+     * @dev Process payment by distributing JPYC (uses all approved amount)
      *
      * Requirements:
-     * - Caller must have approved JPYD tokens to this contract
+     * - Caller must have approved JPYC tokens to this contract
      * - Approved amount must be greater than 0
      *
      * Process:
-     * 1. Transfer approved JPYD from caller to this contract
+     * 1. Transfer approved JPYC from caller to this contract
      * 2. Calculate 1% for JAPointMint and 99% for shop
      * 3. Approve 1% to JAPointMint
      * 4. Call JAPointMint.mint() with sender's address as recipient
@@ -113,13 +113,13 @@ contract Transfer10 is Ownable, ITokenReceiver {
      */
     function processPayment() public {
         // Get the approved amount from the caller
-        uint256 amount = jpydToken.allowance(msg.sender, address(this));
-        require(amount > 0, "No JPYD tokens approved");
+        uint256 amount = jpycToken.allowance(msg.sender, address(this));
+        require(amount > 0, "No JPYC tokens approved");
 
-        // Transfer JPYD from caller to this contract
+        // Transfer JPYC from caller to this contract
         require(
-            jpydToken.transferFrom(msg.sender, address(this), amount),
-            "JPYD transfer failed"
+            jpycToken.transferFrom(msg.sender, address(this), amount),
+            "JPYC transfer failed"
         );
 
         // Process the payment internally
@@ -128,7 +128,7 @@ contract Transfer10 is Ownable, ITokenReceiver {
 
     /**
      * @dev Internal function to process payment distribution
-     * @param amount Amount of JPYD to distribute
+     * @param amount Amount of JPYC to distribute
      * @param sender Address of the sender (who will receive JAPoint)
      */
     function _processPayment(uint256 amount, address sender) internal {
@@ -138,7 +138,7 @@ contract Transfer10 is Ownable, ITokenReceiver {
 
         // Approve JAPointMint to spend 1%
         require(
-            jpydToken.approve(address(japointMint), japointMintAmount),
+            jpycToken.approve(address(japointMint), japointMintAmount),
             "Approval to JAPointMint failed"
         );
 
@@ -147,7 +147,7 @@ contract Transfer10 is Ownable, ITokenReceiver {
 
         // Transfer remaining 99% to shop address
         require(
-            jpydToken.transfer(shopAddress, shopAmount),
+            jpycToken.transfer(shopAddress, shopAmount),
             "Transfer to shop failed"
         );
 
@@ -155,21 +155,21 @@ contract Transfer10 is Ownable, ITokenReceiver {
     }
 
     /**
-     * @dev Called automatically when JPYD tokens are sent to this contract
+     * @dev Called automatically when JPYC tokens are sent to this contract
      * Implements ITokenReceiver interface for automatic payment processing
      * @param from Address of the sender
-     * @param amount Amount of JPYD received
+     * @param amount Amount of JPYC received
      * @return success True if processing succeeded
      */
     function onTokenReceived(address from, uint256 amount) external override returns (bool) {
         // Emit event for debugging
         emit TokenReceived(from, amount, msg.sender);
 
-        // Only accept JPYD tokens from JPYDWrapper
-        // JPYD/JPYC tokens don't have automatic notification, so JPYDWrapper must be used
+        // Only accept JPYC tokens from JPYCWrapper
+        // JPYC tokens don't have automatic notification, so JPYCWrapper must be used
         require(
-            address(jpydWrapper) != address(0) && msg.sender == address(jpydWrapper),
-            "Only JPYD tokens from JPYDWrapper accepted. Use JPYDWrapper to transfer JPYD."
+            address(jpycWrapper) != address(0) && msg.sender == address(jpycWrapper),
+            "Only JPYC tokens from JPYCWrapper accepted. Use JPYCWrapper to transfer JPYC."
         );
         require(amount > 0, "Amount must be greater than 0");
         require(from != address(0), "Invalid sender");
@@ -194,45 +194,45 @@ contract Transfer10 is Ownable, ITokenReceiver {
     }
 
     /**
-     * @dev Process JPYD that was sent directly to this contract
-     * This function processes JPYD balance and assigns it to the caller.
-     * 
+     * @dev Process JPYC that was sent directly to this contract
+     * This function processes JPYC balance and assigns it to the caller.
+     *
      * Usage:
-     * If you sent JPYD directly to Transfer10 (not via JPYDWrapper), call this function
+     * If you sent JPYC directly to Transfer10 (not via JPYCWrapper), call this function
      * to process the payment and receive JAPoint rewards.
-     * 
-     * Note: This function processes the entire JPYD balance of this contract
+     *
+     * Note: This function processes the entire JPYC balance of this contract
      * and assigns the JAPoint reward to the caller. Make sure you are the one
-     * who sent the JPYD, or you may receive rewards intended for someone else.
-     * 
-     * @param amount Amount of JPYD to process (must match the balance or less)
+     * who sent the JPYC, or you may receive rewards intended for someone else.
+     *
+     * @param amount Amount of JPYC to process (must match the balance or less)
      */
     function processDirectTransfer(uint256 amount) external {
         require(amount > 0, "Amount must be greater than 0");
-        
+
         // Check that this contract has at least the requested amount
-        uint256 contractBalance = jpydToken.balanceOf(address(this));
-        require(contractBalance >= amount, "Insufficient JPYD balance in contract");
-        
+        uint256 contractBalance = jpycToken.balanceOf(address(this));
+        require(contractBalance >= amount, "Insufficient JPYC balance in contract");
+
         // Process the payment - caller receives JAPoint reward
         _processPayment(amount, msg.sender);
     }
 
     /**
-     * @dev Process all JPYD that was sent directly to this contract
-     * This function processes all JPYD balance and assigns JAPoint reward to the caller.
-     * 
+     * @dev Process all JPYC that was sent directly to this contract
+     * This function processes all JPYC balance and assigns JAPoint reward to the caller.
+     *
      * Usage:
-     * If you sent JPYD directly to Transfer10, call this function to process
-     * all JPYD balance and receive JAPoint rewards.
-     * 
-     * Note: This function processes the entire JPYD balance. Make sure you are
-     * the one who sent the JPYD, or you may receive rewards intended for someone else.
+     * If you sent JPYC directly to Transfer10, call this function to process
+     * all JPYC balance and receive JAPoint rewards.
+     *
+     * Note: This function processes the entire JPYC balance. Make sure you are
+     * the one who sent the JPYC, or you may receive rewards intended for someone else.
      */
     function processAllDirectTransfer() external {
-        uint256 amount = jpydToken.balanceOf(address(this));
-        require(amount > 0, "No JPYD balance to process");
-        
+        uint256 amount = jpycToken.balanceOf(address(this));
+        require(amount > 0, "No JPYC balance to process");
+
         // Process the payment - caller receives JAPoint reward
         _processPayment(amount, msg.sender);
     }

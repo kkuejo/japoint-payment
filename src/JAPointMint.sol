@@ -7,20 +7,20 @@ import "./JAPoint.sol";
 
 /**
  * @title JAPointMint
- * @dev Contract that distributes JAPoint when receiving JPYD tokens
+ * @dev Contract that distributes JAPoint when receiving JPYC tokens
  *
  * Flow:
- * 1. User approves JPYD to this contract
+ * 1. User approves JPYC to this contract
  * 2. User calls mint(recipient)
- * 3. Contract transfers JPYD from user to itself
+ * 3. Contract transfers JPYC from user to itself
  * 4. Contract transfers same amount of JAPoint to recipient (from its reserve)
- * 5. Contract transfers JPYD to company address
+ * 5. Contract transfers JPYC to company address
  *
  * Note: This contract must hold sufficient JAPoint tokens to distribute.
  * The initial supply is minted to this contract during deployment.
  */
 contract JAPointMint is Ownable {
-    IERC20 public jpydToken;
+    IERC20 public jpycToken;
     IERC20 public japointToken;
     address public companyAddress;
 
@@ -29,44 +29,44 @@ contract JAPointMint is Ownable {
 
     /**
      * @dev Constructor
-     * @param _jpydToken Address of JPYD token contract
+     * @param _jpycToken Address of JPYC token contract
      * @param _japointToken Address of JAPoint token contract
-     * @param _companyAddress Address to receive JPYD tokens
+     * @param _companyAddress Address to receive JPYC tokens
      */
     constructor(
-        address _jpydToken,
+        address _jpycToken,
         address _japointToken,
         address _companyAddress
     ) Ownable(msg.sender) {
-        require(_jpydToken != address(0), "Invalid JPYD address");
+        require(_jpycToken != address(0), "Invalid JPYC address");
         require(_japointToken != address(0), "Invalid JAPoint address");
         require(_companyAddress != address(0), "Invalid company address");
 
-        jpydToken = IERC20(_jpydToken);
+        jpycToken = IERC20(_jpycToken);
         japointToken = IERC20(_japointToken);
         companyAddress = _companyAddress;
     }
 
     /**
-     * @dev Distribute JAPoint by depositing JPYD
+     * @dev Distribute JAPoint by depositing JPYC
      * @param recipient Address to receive JAPoint
      *
      * Requirements:
-     * - Caller must have approved JPYD tokens to this contract
+     * - Caller must have approved JPYC tokens to this contract
      * - Approved amount must be greater than 0
      * - This contract must have sufficient JAPoint balance
      *
      * Process:
-     * 1. Transfer approved JPYD from caller to this contract
+     * 1. Transfer approved JPYC from caller to this contract
      * 2. Transfer same amount of JAPoint to recipient (from reserve)
-     * 3. Transfer JPYD to company address
+     * 3. Transfer JPYC to company address
      */
     function transferJAPoint(address recipient) public {
         require(recipient != address(0), "Invalid recipient address");
 
         // Get the approved amount from the caller
-        uint256 amount = jpydToken.allowance(msg.sender, address(this));
-        require(amount > 0, "No JPYD tokens approved");
+        uint256 amount = jpycToken.allowance(msg.sender, address(this));
+        require(amount > 0, "No JPYC tokens approved");
 
         // Check if this contract has enough JAPoint
         require(
@@ -74,10 +74,10 @@ contract JAPointMint is Ownable {
             "Insufficient JAPoint reserve"
         );
 
-        // Transfer JPYD from caller to this contract
+        // Transfer JPYC from caller to this contract
         require(
-            jpydToken.transferFrom(msg.sender, address(this), amount),
-            "JPYD transfer failed"
+            jpycToken.transferFrom(msg.sender, address(this), amount),
+            "JPYC transfer failed"
         );
 
         // Transfer JAPoint to recipient from reserve
@@ -86,9 +86,9 @@ contract JAPointMint is Ownable {
             "JAPoint transfer failed"
         );
 
-        // Transfer JPYD to company address
+        // Transfer JPYC to company address
         require(
-            jpydToken.transfer(companyAddress, amount),
+            jpycToken.transfer(companyAddress, amount),
             "Transfer to company failed"
         );
 

@@ -6,19 +6,19 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import "./ITokenReceiver.sol";
 
 /**
- * @title JPYDWrapper
- * @dev Wrapper contract that adds automatic notification functionality to JPYD/JPYC tokens
- * 
- * This wrapper allows JPYD (or JPYC) to be used with automatic payment processing
+ * @title JPYCWrapper
+ * @dev Wrapper contract that adds automatic notification functionality to JPYC tokens
+ *
+ * This wrapper allows JPYC to be used with automatic payment processing
  * without modifying the original token contract. Users can transfer tokens through
  * this wrapper to enable automatic notifications to contracts implementing ITokenReceiver.
- * 
+ *
  * Usage:
- * 1. User approves JPYD/JPYC to this wrapper contract
- * 2. User calls transfer() on this wrapper (not directly on JPYD/JPYC)
+ * 1. User approves JPYC to this wrapper contract
+ * 2. User calls transfer() on this wrapper (not directly on JPYC)
  * 3. Wrapper transfers tokens and automatically notifies recipient if it's a contract
  */
-contract JPYDWrapper {
+contract JPYCWrapper {
     IERC20 public immutable token;
 
     event ContractDetected(address indexed to);
@@ -27,7 +27,7 @@ contract JPYDWrapper {
 
     /**
      * @dev Constructor
-     * @param _token Address of the JPYD or JPYC token contract
+     * @param _token Address of the JPYC token contract
      */
     constructor(address _token) {
         require(_token != address(0), "Invalid token address");

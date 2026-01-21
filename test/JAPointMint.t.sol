@@ -2,12 +2,12 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../src/JPYD.sol";
+import "./mocks/MockJPYC.sol";
 import "../src/JAPoint.sol";
 import "../src/JAPointMint.sol";
 
 contract JAPointMintTest is Test {
-    JPYD public jpyd;
+    MockJPYC public jpyc;
     JAPoint public japoint;
     JAPointMint public japointMint;
 
@@ -16,7 +16,7 @@ contract JAPointMintTest is Test {
     address public user2;
     address public companyAddress;
 
-    uint256 constant INITIAL_JPYD_SUPPLY = 1000000 * 10**18;
+    uint256 constant INITIAL_JPYC_SUPPLY = 1000000 * 10**18;
     uint256 constant INITIAL_JAPOINT_RESERVE = 1000000 * 10**18;
 
     event Minted(address indexed user, address indexed recipient, uint256 amount);
@@ -28,15 +28,15 @@ contract JAPointMintTest is Test {
         user2 = address(0x2);
         companyAddress = address(0x999);
 
-        // Deploy JPYD
-        jpyd = new JPYD(INITIAL_JPYD_SUPPLY);
+        // Deploy MockJPYC
+        jpyc = new MockJPYC(INITIAL_JPYC_SUPPLY);
 
         // Deploy JAPoint
         japoint = new JAPoint();
 
         // Deploy JAPointMint
         japointMint = new JAPointMint(
-            address(jpyd),
+            address(jpyc),
             address(japoint),
             companyAddress
         );
@@ -46,8 +46,8 @@ contract JAPointMintTest is Test {
         vm.prank(address(japointMint));
         japoint.mint(address(japointMint), INITIAL_JAPOINT_RESERVE);
 
-        // Give user1 some JPYD tokens
-        jpyd.transfer(user1, 100000 * 10**18);
+        // Give user1 some JPYC tokens
+        jpyc.transfer(user1, 100000 * 10**18);
     }
 
     function testJAPointBasics() public view {
@@ -59,7 +59,7 @@ contract JAPointMintTest is Test {
     }
 
     function testJAPointMintSetup() public view {
-        assertEq(address(japointMint.jpydToken()), address(jpyd));
+        assertEq(address(japointMint.jpycToken()), address(jpyc));
         assertEq(address(japointMint.japointToken()), address(japoint));
         assertEq(japointMint.companyAddress(), companyAddress);
     }
@@ -67,9 +67,9 @@ contract JAPointMintTest is Test {
     function testJAPointMintSuccess() public {
         uint256 mintAmount = 1000 * 10**18;
 
-        // User1 approves JPYD to JAPointMint
+        // User1 approves JPYC to JAPointMint
         vm.startPrank(user1);
-        jpyd.approve(address(japointMint), mintAmount);
+        jpyc.approve(address(japointMint), mintAmount);
 
         // User1 calls mint to mint JAPoint for user2
         vm.expectEmit(true, true, false, true, address(japointMint));
@@ -79,9 +79,9 @@ contract JAPointMintTest is Test {
 
         // Check balances
         assertEq(japoint.balanceOf(user2), mintAmount, "User2 should receive JAPoint");
-        assertEq(jpyd.balanceOf(companyAddress), mintAmount, "Company should receive JPYD");
-        assertEq(jpyd.balanceOf(user1), 100000 * 10**18 - mintAmount, "User1 JPYD should decrease");
-        assertEq(jpyd.balanceOf(address(japointMint)), 0, "JAPointMint should not hold JPYD");
+        assertEq(jpyc.balanceOf(companyAddress), mintAmount, "Company should receive JPYC");
+        assertEq(jpyc.balanceOf(user1), 100000 * 10**18 - mintAmount, "User1 JPYC should decrease");
+        assertEq(jpyc.balanceOf(address(japointMint)), 0, "JAPointMint should not hold JPYC");
     }
 
     function testJAPointMintToSelf() public {
@@ -89,17 +89,17 @@ contract JAPointMintTest is Test {
 
         // User1 mints to themselves
         vm.startPrank(user1);
-        jpyd.approve(address(japointMint), mintAmount);
+        jpyc.approve(address(japointMint), mintAmount);
         japointMint.transferJAPoint(user1);
         vm.stopPrank();
 
         assertEq(japoint.balanceOf(user1), mintAmount);
-        assertEq(jpyd.balanceOf(companyAddress), mintAmount);
+        assertEq(jpyc.balanceOf(companyAddress), mintAmount);
     }
 
     function testJAPointMintFailsWithoutApproval() public {
         vm.startPrank(user1);
-        vm.expectRevert("No JPYD tokens approved");
+        vm.expectRevert("No JPYC tokens approved");
         japointMint.transferJAPoint(user2);
         vm.stopPrank();
     }
@@ -108,7 +108,7 @@ contract JAPointMintTest is Test {
         uint256 mintAmount = 1000 * 10**18;
 
         vm.startPrank(user1);
-        jpyd.approve(address(japointMint), mintAmount);
+        jpyc.approve(address(japointMint), mintAmount);
 
         vm.expectRevert("Invalid recipient address");
         japointMint.transferJAPoint(address(0));
@@ -122,17 +122,17 @@ contract JAPointMintTest is Test {
         vm.startPrank(user1);
 
         // First mint
-        jpyd.approve(address(japointMint), firstAmount);
+        jpyc.approve(address(japointMint), firstAmount);
         japointMint.transferJAPoint(user2);
 
         // Second mint
-        jpyd.approve(address(japointMint), secondAmount);
+        jpyc.approve(address(japointMint), secondAmount);
         japointMint.transferJAPoint(user2);
 
         vm.stopPrank();
 
         assertEq(japoint.balanceOf(user2), firstAmount + secondAmount);
-        assertEq(jpyd.balanceOf(companyAddress), firstAmount + secondAmount);
+        assertEq(jpyc.balanceOf(companyAddress), firstAmount + secondAmount);
     }
 
     function testUpdateCompanyAddress() public {
@@ -159,23 +159,23 @@ contract JAPointMintTest is Test {
     }
 
     function testRecoverTokens() public {
-        // Accidentally send some JPYD directly to JAPointMint
+        // Accidentally send some JPYC directly to JAPointMint
         uint256 accidentalAmount = 100 * 10**18;
-        jpyd.transfer(address(japointMint), accidentalAmount);
+        jpyc.transfer(address(japointMint), accidentalAmount);
 
-        assertEq(jpyd.balanceOf(address(japointMint)), accidentalAmount);
+        assertEq(jpyc.balanceOf(address(japointMint)), accidentalAmount);
 
         // Owner recovers the tokens
-        japointMint.recoverTokens(address(jpyd), accidentalAmount, owner);
+        japointMint.recoverTokens(address(jpyc), accidentalAmount, owner);
 
-        assertEq(jpyd.balanceOf(address(japointMint)), 0);
-        assertEq(jpyd.balanceOf(owner), INITIAL_JPYD_SUPPLY - 100000 * 10**18);
+        assertEq(jpyc.balanceOf(address(japointMint)), 0);
+        assertEq(jpyc.balanceOf(owner), INITIAL_JPYC_SUPPLY - 100000 * 10**18);
     }
 
     function testRecoverTokensFailsForNonOwner() public {
         vm.prank(user1);
         vm.expectRevert();
-        japointMint.recoverTokens(address(jpyd), 100, user1);
+        japointMint.recoverTokens(address(jpyc), 100, user1);
     }
 
     function testFuzzJAPointMint(uint256 amount) public {
@@ -183,25 +183,25 @@ contract JAPointMintTest is Test {
         amount = bound(amount, 1, 100000 * 10**18);
 
         vm.startPrank(user1);
-        jpyd.approve(address(japointMint), amount);
+        jpyc.approve(address(japointMint), amount);
         japointMint.transferJAPoint(user2);
         vm.stopPrank();
 
         assertEq(japoint.balanceOf(user2), amount);
-        assertEq(jpyd.balanceOf(companyAddress), amount);
+        assertEq(jpyc.balanceOf(companyAddress), amount);
     }
 
     function testConstructorValidation() public {
-        // Test invalid JPYD address
-        vm.expectRevert("Invalid JPYD address");
+        // Test invalid JPYC address
+        vm.expectRevert("Invalid JPYC address");
         new JAPointMint(address(0), address(japoint), companyAddress);
 
         // Test invalid JAPoint address
         vm.expectRevert("Invalid JAPoint address");
-        new JAPointMint(address(jpyd), address(0), companyAddress);
+        new JAPointMint(address(jpyc), address(0), companyAddress);
 
         // Test invalid company address
         vm.expectRevert("Invalid company address");
-        new JAPointMint(address(jpyd), address(japoint), address(0));
+        new JAPointMint(address(jpyc), address(japoint), address(0));
     }
 }
