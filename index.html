@@ -634,6 +634,13 @@
             </div>
         </div>
 
+        <!-- Dashboard Link -->
+        <div class="contract-section">
+            <a href="dashboard.html" class="toggle-btn" style="display: block; text-align: center; text-decoration: none;">
+                📊 決済ダッシュボードを開く
+            </a>
+        </div>
+
         <div class="footer">
             <p>🔒 Powered by JAPOINT - モバイル決済システム</p>
         </div>
@@ -651,6 +658,9 @@
 
         // Sepolia RPC URL (public endpoint)
         const SEPOLIA_RPC = 'https://ethereum-sepolia-rpc.publicnode.com';
+
+        // JAPOINT API URL (Cloudflare Workers)
+        const API_URL = 'https://japoint-api.kkuejo.workers.dev';
 
         // PaymentProcessed event ABI
         const PAYMENT_EVENT_ABI = [
@@ -678,15 +688,17 @@
                 transfer10Contract = new ethers.Contract(ADDRESSES.transfer10, PAYMENT_EVENT_ABI, provider);
 
                 // Listen for PaymentProcessed events on Transfer5
-                transfer5Contract.on('PaymentProcessed', (sender, totalAmount, japointMintAmount, shopAmount, event) => {
+                transfer5Contract.on('PaymentProcessed', async (sender, totalAmount, japointMintAmount, shopAmount, event) => {
                     console.log('Transfer5 PaymentProcessed event:', { sender, totalAmount, japointMintAmount, shopAmount });
                     addNotification(sender, totalAmount, japointMintAmount, 'transfer5');
+                    await savePaymentToAPI(event, sender, totalAmount, japointMintAmount, shopAmount, 'transfer5');
                 });
 
                 // Listen for PaymentProcessed events on Transfer10
-                transfer10Contract.on('PaymentProcessed', (sender, totalAmount, japointMintAmount, shopAmount, event) => {
+                transfer10Contract.on('PaymentProcessed', async (sender, totalAmount, japointMintAmount, shopAmount, event) => {
                     console.log('Transfer10 PaymentProcessed event:', { sender, totalAmount, japointMintAmount, shopAmount });
                     addNotification(sender, totalAmount, japointMintAmount, 'transfer10');
+                    await savePaymentToAPI(event, sender, totalAmount, japointMintAmount, shopAmount, 'transfer10');
                 });
 
                 // Update connection status
@@ -698,6 +710,45 @@
                 console.error('Failed to initialize event listener:', error);
                 statusDot.className = 'status-dot disconnected';
                 statusText.textContent = '接続エラー';
+            }
+        }
+
+        // Save payment to API
+        async function savePaymentToAPI(event, sender, totalAmount, japointMintAmount, shopAmount, planType) {
+            try {
+                const block = await event.getBlock();
+                const companyAmount = japointMintAmount; // Company receives same as JAPT minted
+
+                const paymentData = {
+                    txHash: event.transactionHash,
+                    senderAddress: sender,
+                    shopAddress: planType === 'transfer5' ? ADDRESSES.transfer5 : ADDRESSES.transfer10,
+                    companyAddress: ADDRESSES.japt, // JAPointMint address
+                    totalAmount: ethers.formatUnits(totalAmount, 18),
+                    shopAmount: ethers.formatUnits(shopAmount, 18),
+                    companyAmount: ethers.formatUnits(companyAmount, 18),
+                    japtAmount: ethers.formatUnits(japointMintAmount, 18),
+                    planType: planType,
+                    blockNumber: event.blockNumber,
+                    blockTimestamp: block.timestamp
+                };
+
+                const response = await fetch(`${API_URL}/api/payments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(paymentData)
+                });
+
+                if (response.ok) {
+                    console.log('Payment saved to API:', paymentData.txHash);
+                } else {
+                    const error = await response.json();
+                    console.error('Failed to save payment:', error);
+                }
+            } catch (error) {
+                console.error('Error saving payment to API:', error);
             }
         }
 
@@ -919,17 +970,20 @@
         function generateJaptQRCode() {
             if (japtQrGenerated) return;
 
-            // MetaMask deeplink for adding token
-            // Format: ethereum:<token_address>@<chain_id>
-            // Or use the simpler approach with a page that calls wallet_watchAsset
-            const japtAddress = ADDRESSES.japt;
-
-            // Use MetaMask's watchAsset deeplink
-            const watchAssetUrl = `https://metamask.app.link/wallet/watchAsset?type=ERC20&address=${japtAddress}&symbol=JAPT&decimals=18`;
+            // Create URL to add-japt.html page (wrapped in MetaMask deeplink)
+            let addJaptUrl;
+            if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1') || window.location.hostname.includes('192.168') || window.location.hostname.includes('172.')) {
+                // Local development - direct URL
+                addJaptUrl = window.location.origin + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/add-japt.html';
+            } else {
+                // Production - MetaMask deeplink to add-japt.html
+                const dappUrl = window.location.hostname + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/add-japt.html';
+                addJaptUrl = `https://metamask.app.link/dapp/${dappUrl}`;
+            }
 
             QRCode.toCanvas(
                 document.getElementById('japtQrCode'),
-                watchAssetUrl,
+                addJaptUrl,
                 {
                     width: 200,
                     margin: 2,

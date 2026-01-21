@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAPT トークンを追加</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .logo {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .token-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .token-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .token-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .token-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .token-value {
+            color: #333;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .address {
+            font-family: monospace;
+            font-size: 11px;
+            word-break: break-all;
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .add-button {
+            width: 100%;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .add-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .add-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.info {
+            display: block;
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .back-link {
+            margin-top: 20px;
+            display: block;
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .manual-instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #856404;
+            text-align: left;
+            display: none;
+        }
+
+        .manual-instructions h3 {
+            margin-bottom: 10px;
+        }
+
+        .manual-instructions ol {
+            padding-left: 20px;
+        }
+
+        .manual-instructions li {
+            margin-bottom: 5px;
+        }
+
+        .copy-btn {
+            padding: 8px 16px;
+            font-size: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🦊</div>
+        <h1>JAPTトークンを追加</h1>
+        <p class="subtitle">MetaMaskにJAPTを登録します</p>
+
+        <div class="token-info">
+            <div class="token-row">
+                <span class="token-label">トークン名</span>
+                <span class="token-value">JAPoint</span>
+            </div>
+            <div class="token-row">
+                <span class="token-label">シンボル</span>
+                <span class="token-value">JAPT</span>
+            </div>
+            <div class="token-row">
+                <span class="token-label">小数点</span>
+                <span class="token-value">18</span>
+            </div>
+            <div class="token-row">
+                <span class="token-label">ネットワーク</span>
+                <span class="token-value">Sepolia</span>
+            </div>
+            <div class="address" id="tokenAddress">
+                0xE477E1789F928facAA0f2513bA0d18345c97123D
+            </div>
+            <button class="copy-btn" onclick="copyAddress()">アドレスをコピー</button>
+        </div>
+
+        <button class="add-button" id="addButton" onclick="addToken()">
+            <span>🦊</span>
+            <span>MetaMaskに追加</span>
+        </button>
+
+        <div class="status" id="status"></div>
+
+        <div class="manual-instructions" id="manualInstructions">
+            <h3>手動で追加する方法:</h3>
+            <ol>
+                <li>MetaMaskを開く</li>
+                <li>「トークンをインポート」をタップ</li>
+                <li>上記のアドレスを貼り付け</li>
+                <li>シンボル: JAPT、小数点: 18</li>
+                <li>「インポート」をタップ</li>
+            </ol>
+        </div>
+
+        <a href="index.html" class="back-link">← メインページに戻る</a>
+    </div>
+
+    <script>
+        const JAPT_ADDRESS = '0xE477E1789F928facAA0f2513bA0d18345c97123D';
+
+        async function addToken() {
+            const button = document.getElementById('addButton');
+            const status = document.getElementById('status');
+            const manualInstructions = document.getElementById('manualInstructions');
+
+            // Check if MetaMask is available
+            if (typeof window.ethereum === 'undefined') {
+                showStatus('MetaMaskがインストールされていません。手動で追加してください。', 'error');
+                manualInstructions.style.display = 'block';
+                return;
+            }
+
+            try {
+                button.disabled = true;
+                button.innerHTML = '<span>🔄</span><span>追加中...</span>';
+                showStatus('MetaMaskを確認してください...', 'info');
+
+                // Request to add token
+                const wasAdded = await window.ethereum.request({
+                    method: 'wallet_watchAsset',
+                    params: {
+                        type: 'ERC20',
+                        options: {
+                            address: JAPT_ADDRESS,
+                            symbol: 'JAPT',
+                            decimals: 18,
+                            image: '', // Optional: token image URL
+                        },
+                    },
+                });
+
+                if (wasAdded) {
+                    showStatus('✅ JAPTトークンが追加されました！', 'success');
+                } else {
+                    showStatus('トークンの追加がキャンセルされました', 'error');
+                }
+
+            } catch (error) {
+                console.error('Error adding token:', error);
+
+                if (error.code === 4001) {
+                    showStatus('ユーザーがキャンセルしました', 'error');
+                } else if (error.code === -32602) {
+                    showStatus('パラメータエラー。手動で追加してください。', 'error');
+                    manualInstructions.style.display = 'block';
+                } else {
+                    showStatus('エラー: ' + error.message, 'error');
+                    manualInstructions.style.display = 'block';
+                }
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<span>🦊</span><span>MetaMaskに追加</span>';
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        function copyAddress() {
+            const address = document.getElementById('tokenAddress').textContent.trim();
+            navigator.clipboard.writeText(address).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = 'コピーしました！';
+                setTimeout(() => {
+                    btn.textContent = 'アドレスをコピー';
+                }, 2000);
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                alert('コピーに失敗しました: ' + address);
+            });
+        }
+
+        // Auto-trigger if opened in MetaMask browser
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if we're in MetaMask browser
+            if (window.ethereum && window.ethereum.isMetaMask) {
+                // Show a hint
+                showStatus('「MetaMaskに追加」ボタンをタップしてください', 'info');
+            }
+        });
+    </script>
+</body>
+</html>
