@@ -301,6 +301,26 @@
             border-top: 1px solid #e0e0e0;
         }
 
+        .contract-section {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .toggle-btn {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn:hover {
+            background: #e9ecef;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -333,15 +353,6 @@
                     <li>お客様が「支払う」ボタンをタップして署名</li>
                     <li>✅ 完了！自動的にショップと会社に送金、お客様にJAPTポイント付与</li>
                 </ol>
-            </div>
-
-            <div class="contract-info">
-                <h3>🔧 使用コントラクトアドレス（Sepolia Testnet）</h3>
-                <div>JPYC: <span class="address">0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29</span></div>
-                <div>JPYCWrapper: <span class="address">0x23Df6B0D473F006C882668f69bBb917461f2A653</span></div>
-                <div>Transfer10: <span class="address">0x88a6ACE85aA82d3dD8a93977E3Bb6baa594a885E</span></div>
-                <div>Transfer5: <span class="address">0x4C9f456007a1e0833b550D19a65411BA2b5074c4</span></div>
-                <div>JAPoint: <span class="address">0xE477E1789F928facAA0f2513bA0d18345c97123D</span></div>
             </div>
 
             <div class="qr-grid">
@@ -461,6 +472,21 @@
             </ol>
         </div>
 
+        <!-- Contract Info (Collapsible) -->
+        <div class="contract-section">
+            <button class="toggle-btn" onclick="toggleContractInfo()">
+                🔧 コントラクトアドレスを表示
+            </button>
+            <div class="contract-info" id="contractInfo" style="display: none;">
+                <h3>使用コントラクトアドレス（Sepolia Testnet）</h3>
+                <div>JPYC: <span class="address">0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29</span></div>
+                <div>JPYCWrapper: <span class="address">0x23Df6B0D473F006C882668f69bBb917461f2A653</span></div>
+                <div>Transfer10: <span class="address">0x88a6ACE85aA82d3dD8a93977E3Bb6baa594a885E</span></div>
+                <div>Transfer5: <span class="address">0x4C9f456007a1e0833b550D19a65411BA2b5074c4</span></div>
+                <div>JAPoint: <span class="address">0xE477E1789F928facAA0f2513bA0d18345c97123D</span></div>
+            </div>
+        </div>
+
         <div class="footer">
             <p>🔒 Powered by JAPOINT - モバイル決済システム</p>
         </div>
@@ -564,6 +590,18 @@
             document.addEventListener('DOMContentLoaded', initQRCodes);
         } else {
             initQRCodes();
+        }
+
+        function toggleContractInfo() {
+            const contractInfo = document.getElementById('contractInfo');
+            const toggleBtn = document.querySelector('.toggle-btn');
+            if (contractInfo.style.display === 'none') {
+                contractInfo.style.display = 'block';
+                toggleBtn.textContent = '🔧 コントラクトアドレスを非表示';
+            } else {
+                contractInfo.style.display = 'none';
+                toggleBtn.textContent = '🔧 コントラクトアドレスを表示';
+            }
         }
     </script>
 </body>
