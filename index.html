@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JAPOINT 決済システム</title>
     <script src="https://unpkg.com/qrcode@1.4.4/build/qrcode.min.js" onerror="loadQRCodeFallback()"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
     <script>
         function loadQRCodeFallback() {
             console.log('Primary CDN failed, trying fallback...');
@@ -97,6 +98,124 @@
             color: #333;
             font-size: 18px;
             margin-bottom: 15px;
+        }
+
+        /* Payment Notification Styles */
+        .notification-section {
+            margin-bottom: 30px;
+        }
+
+        .notification-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .notification-header h2 {
+            color: #333;
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-dot.connected {
+            background: #4CAF50;
+            animation: pulse-green 2s infinite;
+        }
+
+        .status-dot.disconnected {
+            background: #f44336;
+        }
+
+        .status-dot.connecting {
+            background: #ff9800;
+            animation: pulse-orange 1s infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes pulse-orange {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .notification-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #4CAF50;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .notification-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .notification-item.point-1 {
+            border-left-color: #2196F3;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .notification-time {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .notification-message {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .notification-address {
+            font-family: monospace;
+            font-size: 11px;
+            color: #667eea;
+            word-break: break-all;
+        }
+
+        .notification-empty {
+            text-align: center;
+            color: #999;
+            padding: 30px;
+            font-size: 14px;
         }
 
         /* QR Code Section Styles */
@@ -294,6 +413,12 @@
             h1 {
                 font-size: 24px;
             }
+
+            .notification-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -301,6 +426,22 @@
     <div class="container">
         <h1>JAPOINT 決済システム</h1>
         <p class="subtitle">モバイル対応のスマート決済システム</p>
+
+        <!-- Payment Notifications -->
+        <div class="notification-section">
+            <div class="notification-header">
+                <h2>📢 決済通知</h2>
+                <div class="connection-status">
+                    <span class="status-dot connecting" id="statusDot"></span>
+                    <span id="statusText">接続中...</span>
+                </div>
+            </div>
+            <div class="notification-container" id="notificationContainer">
+                <div class="notification-empty" id="emptyMessage">
+                    決済が発生すると、ここに通知が表示されます
+                </div>
+            </div>
+        </div>
 
         <!-- Plan Selector -->
         <div class="plan-selector">
@@ -474,8 +615,109 @@
             japt: '0xE477E1789F928facAA0f2513bA0d18345c97123D'
         };
 
+        // Sepolia RPC URL (public endpoint)
+        const SEPOLIA_RPC = 'https://ethereum-sepolia-rpc.publicnode.com';
+
+        // PaymentProcessed event ABI
+        const PAYMENT_EVENT_ABI = [
+            'event PaymentProcessed(address indexed sender, uint256 totalAmount, uint256 japointMintAmount, uint256 shopAmount)'
+        ];
+
         // Base URL for payment page
         const BASE_URL = window.location.origin + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/mobile-payment.html';
+
+        let provider = null;
+        let transfer5Contract = null;
+        let transfer10Contract = null;
+
+        // Initialize blockchain event listener
+        async function initEventListener() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+
+            try {
+                // Create provider
+                provider = new ethers.JsonRpcProvider(SEPOLIA_RPC);
+
+                // Create contract instances
+                transfer5Contract = new ethers.Contract(ADDRESSES.transfer5, PAYMENT_EVENT_ABI, provider);
+                transfer10Contract = new ethers.Contract(ADDRESSES.transfer10, PAYMENT_EVENT_ABI, provider);
+
+                // Listen for PaymentProcessed events on Transfer5
+                transfer5Contract.on('PaymentProcessed', (sender, totalAmount, japointMintAmount, shopAmount, event) => {
+                    console.log('Transfer5 PaymentProcessed event:', { sender, totalAmount, japointMintAmount, shopAmount });
+                    addNotification(sender, totalAmount, japointMintAmount, 'transfer5');
+                });
+
+                // Listen for PaymentProcessed events on Transfer10
+                transfer10Contract.on('PaymentProcessed', (sender, totalAmount, japointMintAmount, shopAmount, event) => {
+                    console.log('Transfer10 PaymentProcessed event:', { sender, totalAmount, japointMintAmount, shopAmount });
+                    addNotification(sender, totalAmount, japointMintAmount, 'transfer10');
+                });
+
+                // Update connection status
+                statusDot.className = 'status-dot connected';
+                statusText.textContent = 'Sepolia監視中';
+                console.log('Event listeners initialized successfully');
+
+            } catch (error) {
+                console.error('Failed to initialize event listener:', error);
+                statusDot.className = 'status-dot disconnected';
+                statusText.textContent = '接続エラー';
+            }
+        }
+
+        // Add notification to the container
+        function addNotification(senderAddress, totalAmount, japointAmount, planType) {
+            const container = document.getElementById('notificationContainer');
+            const emptyMessage = document.getElementById('emptyMessage');
+
+            // Hide empty message
+            if (emptyMessage) {
+                emptyMessage.style.display = 'none';
+            }
+
+            // Format amounts (convert from wei to token units, assuming 18 decimals)
+            const jpycAmount = ethers.formatUnits(totalAmount, 18);
+            const japtAmount = ethers.formatUnits(japointAmount, 18);
+
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification-item ${planType === 'transfer10' ? 'point-1' : ''}`;
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ja-JP');
+
+            notification.innerHTML = `
+                <div class="notification-time">${timeStr}</div>
+                <div class="notification-message">
+                    アドレス <span class="notification-address">${shortenAddress(senderAddress)}</span> から<br>
+                    <strong>${parseFloat(jpycAmount).toLocaleString()} JPYC</strong> の振り込みがあり、<br>
+                    <strong>${parseFloat(japtAmount).toLocaleString()} JAPT</strong> を還元しました
+                </div>
+            `;
+
+            // Insert at the top
+            container.insertBefore(notification, container.firstChild);
+
+            // Keep only last 10 notifications
+            const notifications = container.querySelectorAll('.notification-item');
+            if (notifications.length > 10) {
+                notifications[notifications.length - 1].remove();
+            }
+
+            // Play notification sound (optional - browser may block)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2DgYF8eXZ4eX+Bg4OBfnx7fH+ChISDgH18fX+ChISEgn99fH6Bg4WFg4F+fHx+gYOFhoWDf3x7fX+ChIWFg4B9e3x+gYOFhYOBfXt7fn+ChIWFg4B9e3x+gYOFhYOBfXt7fn+ChIWFg4B9e3x+gYOFhYOBfXt7fn+ChIWEg4B9e3x/gYOFhYOAfXt8fn+Cg4WFg4F9e3t+f4KDhYWDgH17fH6Ag4WFhIOAfXt8fn+Cg4WFg4F9e3t+f4KDhYWDgH18fH6Bg4SEg4B9e3x/gYOEhIOAfXt8fn+Cg4WFg4F9e3t+f4KDhYWDgH18');
+                audio.volume = 0.3;
+                audio.play().catch(() => {}); // Ignore errors
+            } catch (e) {}
+        }
+
+        // Shorten address for display
+        function shortenAddress(address) {
+            return address.slice(0, 6) + '...' + address.slice(-4);
+        }
 
         function switchPlan() {
             const select = document.getElementById('planSelect');
@@ -568,9 +810,13 @@
         }
 
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initQRCodes);
+            document.addEventListener('DOMContentLoaded', () => {
+                initQRCodes();
+                initEventListener();
+            });
         } else {
             initQRCodes();
+            initEventListener();
         }
 
         function toggleContractInfo() {
