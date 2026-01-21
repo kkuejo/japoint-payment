@@ -299,23 +299,16 @@
             japtAddress: urlParams.get('japt')
         };
 
-        // ABIs
+        // ABIs (simplified - Sepolia JPYC doesn't support Permit)
         const JPYC_ABI = [
             "function balanceOf(address account) external view returns (uint256)",
-            "function nonces(address owner) external view returns (uint256)",
-            "function DOMAIN_SEPARATOR() external view returns (bytes32)",
-            "function name() external view returns (string)",
             "function approve(address spender, uint256 amount) external returns (bool)",
             "function allowance(address owner, address spender) external view returns (uint256)"
         ];
 
         const WRAPPER_ABI = [
-            "function transferWithPermit(address to, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external returns (bool)",
             "function transfer(address to, uint256 amount) external returns (bool)"
         ];
-
-        // Variable to store token name
-        let tokenName = 'JPY Coin'; // Default for Sepolia JPYC
 
         const JAPT_ABI = [
             "function balanceOf(address account) external view returns (uint256)"
@@ -398,16 +391,6 @@
                 }
                 showDiagnostic('✅ コントラクト初期化完了');
 
-                // Get token name for EIP-712 domain
-                try {
-                    tokenName = await jpydContract.name();
-                    console.log('Token name:', tokenName);
-                    showDiagnostic('✅ トークン名取得: ' + tokenName);
-                } catch (e) {
-                    console.log('Could not get token name, using default:', tokenName);
-                    showDiagnostic('⚠️ トークン名取得失敗、デフォルト使用: ' + tokenName);
-                }
-
                 // Show payment section
                 document.getElementById('walletSection').classList.add('hidden');
                 document.getElementById('paymentSection').classList.remove('hidden');
@@ -489,14 +472,8 @@
             try {
                 document.getElementById('payButton').disabled = true;
 
-                // First try Permit method, then fallback to approve+transfer
-                let success = await tryPermitMethod(amountWei);
-
-                if (!success) {
-                    console.log('Permit method failed, trying approve+transfer...');
-                    showStatus('別の方法で決済を試みます... <div class="loading"></div>', 'info');
-                    success = await tryApproveMethod(amountWei);
-                }
+                // Use approve+transfer method (Sepolia JPYC doesn't support Permit)
+                const success = await tryApproveMethod(amountWei);
 
                 if (success) {
                     showStatus('✅ 決済完了！JAPTポイントを獲得しました！', 'success');
@@ -518,89 +495,17 @@
                 let errorMsg = error.message;
 
                 if (error.code === 4001) {
-                    errorMsg = 'ユーザーが署名を拒否しました';
+                    errorMsg = 'ユーザーがトランザクションを拒否しました';
                 } else if (error.message.includes('insufficient funds')) {
                     errorMsg = 'JPYC残高が不足しています';
-                } else if (error.message.includes('missing revert data')) {
-                    errorMsg = '署名検証に失敗しました。再度お試しください。';
+                } else if (error.message.includes('transfer amount exceeds balance')) {
+                    errorMsg = 'JPYC残高が不足しています';
+                } else if (error.message.includes('user rejected')) {
+                    errorMsg = 'トランザクションがキャンセルされました';
                 }
 
                 showStatus('❌ エラー: ' + errorMsg, 'error');
                 document.getElementById('payButton').disabled = false;
-            }
-        }
-
-        async function tryPermitMethod(amountWei) {
-            try {
-                showStatus('署名を作成中... <div class="loading"></div>', 'info');
-
-                const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
-
-                // Get nonce
-                const nonce = await jpydContract.nonces(userAddress);
-                console.log('Nonce:', nonce.toString());
-
-                // Create EIP-712 signature for permit
-                const chainId = (await provider.getNetwork()).chainId;
-                console.log('ChainId:', chainId);
-                console.log('Token name for domain:', tokenName);
-
-                const domain = {
-                    name: tokenName,
-                    version: '1',
-                    chainId: chainId,
-                    verifyingContract: config.jpydAddress
-                };
-
-                const types = {
-                    Permit: [
-                        { name: 'owner', type: 'address' },
-                        { name: 'spender', type: 'address' },
-                        { name: 'value', type: 'uint256' },
-                        { name: 'nonce', type: 'uint256' },
-                        { name: 'deadline', type: 'uint256' }
-                    ]
-                };
-
-                const value = {
-                    owner: userAddress,
-                    spender: config.wrapperAddress,
-                    value: amountWei,
-                    nonce: nonce,
-                    deadline: deadline
-                };
-
-                console.log('Signing permit with domain:', domain);
-                console.log('Permit value:', value);
-
-                // Sign the permit
-                const signature = await signer._signTypedData(domain, types, value);
-                const sig = ethers.utils.splitSignature(signature);
-
-                showStatus('決済を実行中... <div class="loading"></div>', 'info');
-
-                // Execute transferWithPermit
-                const tx = await wrapperContract.transferWithPermit(
-                    config.targetAddress,
-                    amountWei,
-                    deadline,
-                    sig.v,
-                    sig.r,
-                    sig.s
-                );
-
-                showStatus('トランザクション送信完了！確認中... <div class="loading"></div>', 'info');
-
-                await tx.wait();
-                return true;
-
-            } catch (error) {
-                console.error('Permit method failed:', error);
-                // Check if user rejected the signature
-                if (error.code === 4001) {
-                    throw error; // Re-throw user rejection
-                }
-                return false;
             }
         }
 
