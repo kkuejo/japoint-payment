@@ -76,7 +76,7 @@
             font-size: 14px;
         }
 
-        input[type="number"] {
+        input[type="text"]#amount {
             width: 100%;
             padding: 15px;
             font-size: 24px;
@@ -251,12 +251,12 @@
             <div class="amount-section">
                 <label for="amount">支払い金額（JPYC）</label>
                 <input
-                    type="number"
+                    type="text"
                     id="amount"
+                    inputmode="numeric"
+                    pattern="[0-9,]*"
                     placeholder=""
-                    min="0"
-                    step="1"
-                    oninput="updateBreakdown()"
+                    oninput="formatAmountInput(this)"
                 >
             </div>
 
@@ -419,6 +419,39 @@
             return Math.floor(num).toLocaleString('ja-JP');
         }
 
+        // Format amount input with commas as user types
+        function formatAmountInput(input) {
+            // Get cursor position
+            const cursorPos = input.selectionStart;
+            const oldLength = input.value.length;
+
+            // Remove non-numeric characters except for processing
+            let rawValue = input.value.replace(/[^\d]/g, '');
+
+            // Format with commas
+            if (rawValue) {
+                input.value = parseInt(rawValue, 10).toLocaleString('ja-JP');
+            } else {
+                input.value = '';
+            }
+
+            // Adjust cursor position after formatting
+            const newLength = input.value.length;
+            const diff = newLength - oldLength;
+            const newCursorPos = Math.max(0, cursorPos + diff);
+            input.setSelectionRange(newCursorPos, newCursorPos);
+
+            // Update breakdown
+            updateBreakdown();
+        }
+
+        // Get raw numeric value from formatted input
+        function getAmountValue() {
+            const input = document.getElementById('amount');
+            const rawValue = input.value.replace(/[^\d]/g, '');
+            return rawValue ? parseInt(rawValue, 10) : 0;
+        }
+
         async function updateBalances() {
             try {
                 const jpycBalance = await jpydContract.balanceOf(userAddress);
@@ -444,7 +477,7 @@
         }
 
         function updateBreakdown() {
-            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            const amount = getAmountValue();
 
             const feePercentage = config.contractType === 'transfer5' ? 0.005 : 0.01;
             const fee = amount * feePercentage;
@@ -461,13 +494,13 @@
         }
 
         async function pay() {
-            const amount = document.getElementById('amount').value;
-            if (!amount || parseFloat(amount) <= 0) {
+            const amount = getAmountValue();
+            if (!amount || amount <= 0) {
                 showStatus('金額を入力してください', 'error');
                 return;
             }
 
-            const amountWei = ethers.utils.parseEther(amount);
+            const amountWei = ethers.utils.parseEther(amount.toString());
 
             try {
                 document.getElementById('payButton').disabled = true;
