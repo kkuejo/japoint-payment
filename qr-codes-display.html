@@ -381,27 +381,15 @@
                 japt: ADDRESSES.japt
             });
 
-            const normalUrl = `${BASE_URL}?${params.toString()}`;
+            const qrUrl = `${BASE_URL}?${params.toString()}`;
 
-            // Create MetaMask deeplink for automatic opening in MetaMask browser
-            // Format: https://metamask.app.link/dapp/DOMAIN/PATH
-            let qrUrl;
-            if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1') || window.location.hostname.includes('192.168') || window.location.hostname.includes('172.')) {
-                // For localhost/local network, use normal URL
-                qrUrl = normalUrl;
-            } else {
-                // For production (GitHub Pages), use MetaMask deeplink
-                const dappUrl = window.location.hostname + window.location.pathname.replace('qr-codes-display.html', 'mobile-payment.html');
-                qrUrl = `https://metamask.app.link/dapp/${dappUrl}?${params.toString()}`;
-            }
-
-            // Display normal URL for reference
+            // Display URL for reference
             document.getElementById(urlId).innerHTML = `
-                <div><strong>通常URL:</strong> ${normalUrl}</div>
-                <div style="margin-top: 5px;"><strong>QRコード:</strong> MetaMaskで自動的に開きます</div>
+                <div><strong>URL:</strong> ${qrUrl}</div>
+                <div style="margin-top: 5px; color: #666;">📱 スキャン後、MetaMaskブラウザで開いてください</div>
             `;
 
-            // Generate QR code with MetaMask deeplink
+            // Generate QR code with normal URL
             QRCode.toCanvas(
                 document.getElementById(canvasId),
                 qrUrl,
