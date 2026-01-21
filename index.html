@@ -35,7 +35,7 @@
             background: white;
             border-radius: 20px;
             padding: 40px;
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
@@ -50,8 +50,40 @@
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             font-size: 16px;
+        }
+
+        .plan-selector {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .plan-selector label {
+            font-size: 14px;
+            color: #333;
+            margin-right: 10px;
+        }
+
+        .plan-selector select {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            min-width: 200px;
+            transition: all 0.3s;
+        }
+
+        .plan-selector select:hover {
+            border-color: #667eea;
+        }
+
+        .plan-selector select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
         .info-box {
@@ -67,64 +99,9 @@
             margin-bottom: 15px;
         }
 
-        .info-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-        }
-
-        .info-item-icon {
-            font-size: 24px;
-            margin-right: 15px;
-        }
-
-        .info-item-text {
-            flex: 1;
-        }
-
-        .info-item-label {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .info-item-value {
-            font-family: monospace;
-            font-size: 11px;
-            color: #333;
-            word-break: break-all;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #4CAF50;
-            margin-right: 8px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
-        }
-
         /* QR Code Section Styles */
         .qr-section {
             margin: 30px 0;
-        }
-
-        .qr-section h2 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 20px;
         }
 
         .usage-steps {
@@ -166,13 +143,6 @@
             font-size: 12px;
         }
 
-        .qr-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
         .qr-card {
             background: white;
             border-radius: 15px;
@@ -180,6 +150,8 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             text-align: center;
             border: 1px solid #e0e0e0;
+            max-width: 400px;
+            margin: 0 auto 30px;
         }
 
         .qr-card.transfer5 {
@@ -321,6 +293,10 @@
             background: #e9ecef;
         }
 
+        .hidden {
+            display: none;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px;
@@ -328,10 +304,6 @@
 
             h1 {
                 font-size: 24px;
-            }
-
-            .qr-grid {
-                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -341,45 +313,52 @@
         <h1>JAPOINT 決済システム</h1>
         <p class="subtitle">モバイル対応のスマート決済システム</p>
 
+        <!-- Plan Selector -->
+        <div class="plan-selector">
+            <label for="planSelect">プランを選択:</label>
+            <select id="planSelect" onchange="switchPlan()">
+                <option value="transfer5">手数料 0.5% プラン</option>
+                <option value="transfer10">手数料 1% プラン</option>
+            </select>
+        </div>
+
         <!-- QR Code Section -->
         <div class="qr-section">
-            <div class="qr-grid">
-                <!-- Transfer5 QR Code -->
-                <div class="qr-card transfer5">
-                    <div class="qr-title">🟢 Transfer5</div>
-                    <div class="fee-info">手数料 0.5% プラン</div>
-                    <div class="highlight">
-                        <strong>お客様受取:</strong> 0.5% JAPT還元<br>
-                        <strong>ショップ受取:</strong> 99.5%
-                    </div>
-                    <div class="qr-code-container">
-                        <canvas id="qrTransfer5"></canvas>
-                    </div>
-                    <div class="url-info" id="urlTransfer5"></div>
-                    <div class="buttons">
-                        <button class="download-btn" onclick="downloadQR('qrTransfer5', 'transfer5-qr.png')">
-                            💾 ダウンロード
-                        </button>
-                    </div>
+            <!-- Transfer5 QR Code -->
+            <div class="qr-card transfer5" id="card-transfer5">
+                <div class="qr-title">🟢 Transfer5</div>
+                <div class="fee-info">手数料 0.5% プラン</div>
+                <div class="highlight">
+                    <strong>お客様受取:</strong> 0.5% JAPT還元<br>
+                    <strong>ショップ受取:</strong> 99.5%
                 </div>
+                <div class="qr-code-container">
+                    <canvas id="qrTransfer5"></canvas>
+                </div>
+                <div class="url-info" id="urlTransfer5"></div>
+                <div class="buttons">
+                    <button class="download-btn" onclick="downloadQR('qrTransfer5', 'transfer5-qr.png')">
+                        💾 ダウンロード
+                    </button>
+                </div>
+            </div>
 
-                <!-- Transfer10 QR Code -->
-                <div class="qr-card transfer10">
-                    <div class="qr-title">🔵 Transfer10</div>
-                    <div class="fee-info">手数料 1% プラン</div>
-                    <div class="highlight">
-                        <strong>お客様受取:</strong> 1% JAPT還元<br>
-                        <strong>ショップ受取:</strong> 99%
-                    </div>
-                    <div class="qr-code-container">
-                        <canvas id="qrTransfer10"></canvas>
-                    </div>
-                    <div class="url-info" id="urlTransfer10"></div>
-                    <div class="buttons">
-                        <button class="download-btn" onclick="downloadQR('qrTransfer10', 'transfer10-qr.png')">
-                            💾 ダウンロード
-                        </button>
-                    </div>
+            <!-- Transfer10 QR Code -->
+            <div class="qr-card transfer10 hidden" id="card-transfer10">
+                <div class="qr-title">🔵 Transfer10</div>
+                <div class="fee-info">手数料 1% プラン</div>
+                <div class="highlight">
+                    <strong>お客様受取:</strong> 1% JAPT還元<br>
+                    <strong>ショップ受取:</strong> 99%
+                </div>
+                <div class="qr-code-container">
+                    <canvas id="qrTransfer10"></canvas>
+                </div>
+                <div class="url-info" id="urlTransfer10"></div>
+                <div class="buttons">
+                    <button class="download-btn" onclick="downloadQR('qrTransfer10', 'transfer10-qr.png')">
+                        💾 ダウンロード
+                    </button>
                 </div>
             </div>
 
@@ -502,6 +481,20 @@
 
         // Base URL for payment page
         const BASE_URL = window.location.origin + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/mobile-payment.html';
+
+        function switchPlan() {
+            const select = document.getElementById('planSelect');
+            const card5 = document.getElementById('card-transfer5');
+            const card10 = document.getElementById('card-transfer10');
+
+            if (select.value === 'transfer5') {
+                card5.classList.remove('hidden');
+                card10.classList.add('hidden');
+            } else {
+                card5.classList.add('hidden');
+                card10.classList.remove('hidden');
+            }
+        }
 
         function generateQRCode(canvasId, urlId, type, shopName) {
             const targetAddress = type === 'transfer5' ? ADDRESSES.transfer5 : ADDRESSES.transfer10;
