@@ -505,6 +505,22 @@
 
         </div>
 
+        <!-- Add JAPT to MetaMask -->
+        <div class="contract-section">
+            <button class="toggle-btn" onclick="toggleAddJapt()" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">
+                🦊 JAPTをMetaMaskに追加
+            </button>
+            <div id="addJaptSection" style="display: none; margin-top: 15px; text-align: center;">
+                <p style="margin-bottom: 15px; color: #666;">QRコードをスキャンしてJAPTトークンをMetaMaskに追加</p>
+                <div style="background: white; padding: 20px; border-radius: 10px; display: inline-block;">
+                    <canvas id="japtQrCode"></canvas>
+                </div>
+                <p style="margin-top: 15px; font-size: 12px; color: #888;">
+                    JAPT: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">0xE477E1789F928facAA0f2513bA0d18345c97123D</code>
+                </p>
+            </div>
+        </div>
+
         <!-- Quick Start (Collapsible) -->
         <div class="contract-section">
             <button class="toggle-btn" onclick="toggleQuickStart()">
@@ -896,6 +912,52 @@
             } catch (error) {
                 console.error('QR生成エラー:', error);
                 alert('QRコード生成中にエラーが発生しました: ' + error.message);
+            }
+        }
+
+        let japtQrGenerated = false;
+        function generateJaptQRCode() {
+            if (japtQrGenerated) return;
+
+            // MetaMask deeplink for adding token
+            // Format: ethereum:<token_address>@<chain_id>
+            // Or use the simpler approach with a page that calls wallet_watchAsset
+            const japtAddress = ADDRESSES.japt;
+
+            // Use MetaMask's watchAsset deeplink
+            const watchAssetUrl = `https://metamask.app.link/wallet/watchAsset?type=ERC20&address=${japtAddress}&symbol=JAPT&decimals=18`;
+
+            QRCode.toCanvas(
+                document.getElementById('japtQrCode'),
+                watchAssetUrl,
+                {
+                    width: 200,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                },
+                function (error) {
+                    if (error) {
+                        console.error('JAPT QR生成エラー:', error);
+                    } else {
+                        japtQrGenerated = true;
+                    }
+                }
+            );
+        }
+
+        function toggleAddJapt() {
+            const section = document.getElementById('addJaptSection');
+            const btn = section.previousElementSibling;
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                btn.textContent = '🦊 JAPTをMetaMaskに追加を非表示';
+                generateJaptQRCode();
+            } else {
+                section.style.display = 'none';
+                btn.textContent = '🦊 JAPTをMetaMaskに追加';
             }
         }
 
