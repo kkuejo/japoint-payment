@@ -6,11 +6,11 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "japoint-payments"
-database_id = "YOUR_DATABASE_ID"  # Replace after creating DB with: wrangler d1 create japoint-payments
+database_id = "15ff8ac7-fea5-491b-adf3-dcca95c5534c"
 
 # CORS settings for GitHub Pages / Cloudflare Pages
 [vars]
-ALLOWED_ORIGINS = "https://kkuejo.github.io,https://japoint.pages.dev"
+ALLOWED_ORIGINS = "https://kkuejo.github.io,https://japoint-payment.pages.dev,https://e6973ae2.japoint-payment.pages.dev"
 
 # Routes (optional - for custom domain)
 # routes = [
