@@ -253,9 +253,9 @@
                 <input
                     type="number"
                     id="amount"
-                    placeholder="0"
+                    placeholder="1,000"
                     min="0"
-                    step="0.01"
+                    step="1"
                     oninput="updateBreakdown()"
                 >
             </div>
@@ -431,19 +431,26 @@
             }
         }
 
+        // Format number with commas (integer only)
+        function formatWithCommas(num) {
+            return Math.floor(num).toLocaleString('ja-JP');
+        }
+
         async function updateBalances() {
             try {
                 const jpycBalance = await jpydContract.balanceOf(userAddress);
+                const jpycFormatted = formatWithCommas(parseFloat(ethers.utils.formatEther(jpycBalance)));
                 let balanceHTML = `
                     <div class="balance-label">JPYC残高</div>
-                    <div class="balance-amount">${ethers.utils.formatEther(jpycBalance)} JPYC</div>
+                    <div class="balance-amount">${jpycFormatted} JPYC</div>
                 `;
 
                 if (japtContract) {
                     const japtBalance = await japtContract.balanceOf(userAddress);
+                    const japtFormatted = formatWithCommas(parseFloat(ethers.utils.formatEther(japtBalance)));
                     balanceHTML += `
                         <div class="balance-label" style="margin-top: 10px;">JAPT残高</div>
-                        <div class="balance-amount" style="color: #4CAF50;">${ethers.utils.formatEther(japtBalance)} JAPT</div>
+                        <div class="balance-amount" style="color: #4CAF50;">${japtFormatted} JAPT</div>
                     `;
                 }
 
@@ -461,10 +468,10 @@
             const shopReceives = amount - fee;
             const reward = fee; // Same as fee amount in JAPT
 
-            document.getElementById('totalAmount').textContent = amount.toFixed(2) + ' JPYC';
-            document.getElementById('shopAmount').textContent = shopReceives.toFixed(2) + ' JPYC';
-            document.getElementById('feeAmount').textContent = fee.toFixed(2) + ' JPYC';
-            document.getElementById('rewardAmount').textContent = reward.toFixed(2) + ' JAPT';
+            document.getElementById('totalAmount').textContent = formatWithCommas(amount) + ' JPYC';
+            document.getElementById('shopAmount').textContent = formatWithCommas(shopReceives) + ' JPYC';
+            document.getElementById('feeAmount').textContent = formatWithCommas(fee) + ' JPYC';
+            document.getElementById('rewardAmount').textContent = formatWithCommas(reward) + ' JAPT';
 
             // Enable/disable pay button
             document.getElementById('payButton').disabled = amount <= 0;
