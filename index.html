@@ -203,17 +203,6 @@
             border-radius: 8px;
         }
 
-        .url-info {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 10px;
-            word-break: break-all;
-            font-family: monospace;
-            margin: 10px 0;
-            text-align: left;
-        }
-
         .buttons {
             display: flex;
             gap: 10px;
@@ -317,8 +306,8 @@
         <div class="plan-selector">
             <label for="planSelect">プランを選択:</label>
             <select id="planSelect" onchange="switchPlan()">
-                <option value="transfer5">手数料 0.5% プラン</option>
-                <option value="transfer10">手数料 1% プラン</option>
+                <option value="transfer5">ポイント 0.5% 還元プラン</option>
+                <option value="transfer10">ポイント 1% 還元プラン</option>
             </select>
         </div>
 
@@ -326,8 +315,7 @@
         <div class="qr-section">
             <!-- Transfer5 QR Code -->
             <div class="qr-card transfer5" id="card-transfer5">
-                <div class="qr-title">🟢 Transfer5</div>
-                <div class="fee-info">手数料 0.5% プラン</div>
+                <div class="qr-title">🟢 ポイント 0.5% 還元</div>
                 <div class="highlight">
                     <strong>お客様受取:</strong> 0.5% JAPT還元<br>
                     <strong>ショップ受取:</strong> 99.5%
@@ -335,9 +323,8 @@
                 <div class="qr-code-container">
                     <canvas id="qrTransfer5"></canvas>
                 </div>
-                <div class="url-info" id="urlTransfer5"></div>
                 <div class="buttons">
-                    <button class="download-btn" onclick="downloadQR('qrTransfer5', 'transfer5-qr.png')">
+                    <button class="download-btn" onclick="downloadQR('qrTransfer5', 'point-05-qr.png')">
                         💾 ダウンロード
                     </button>
                 </div>
@@ -345,8 +332,7 @@
 
             <!-- Transfer10 QR Code -->
             <div class="qr-card transfer10 hidden" id="card-transfer10">
-                <div class="qr-title">🔵 Transfer10</div>
-                <div class="fee-info">手数料 1% プラン</div>
+                <div class="qr-title">🔵 ポイント 1% 還元</div>
                 <div class="highlight">
                     <strong>お客様受取:</strong> 1% JAPT還元<br>
                     <strong>ショップ受取:</strong> 99%
@@ -354,9 +340,8 @@
                 <div class="qr-code-container">
                     <canvas id="qrTransfer10"></canvas>
                 </div>
-                <div class="url-info" id="urlTransfer10"></div>
                 <div class="buttons">
-                    <button class="download-btn" onclick="downloadQR('qrTransfer10', 'transfer10-qr.png')">
+                    <button class="download-btn" onclick="downloadQR('qrTransfer10', 'point-1-qr.png')">
                         💾 ダウンロード
                     </button>
                 </div>
@@ -378,8 +363,8 @@
                     <thead>
                         <tr>
                             <th>項目</th>
-                            <th>Transfer5 (0.5%)</th>
-                            <th>Transfer10 (1%)</th>
+                            <th>ポイント 0.5% 還元</th>
+                            <th>ポイント 1% 還元</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -506,7 +491,7 @@
             }
         }
 
-        function generateQRCode(canvasId, urlId, type, shopName) {
+        function generateQRCode(canvasId, type, shopName) {
             const targetAddress = type === 'transfer5' ? ADDRESSES.transfer5 : ADDRESSES.transfer10;
 
             const params = new URLSearchParams({
@@ -528,11 +513,6 @@
                 const dappUrl = window.location.hostname + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/mobile-payment.html';
                 qrUrl = `https://metamask.app.link/dapp/${dappUrl}?${params.toString()}`;
             }
-
-            document.getElementById(urlId).innerHTML = `
-                <div><strong>通常URL:</strong> ${normalUrl}</div>
-                <div style="margin-top: 5px;"><strong>QRコード:</strong> MetaMaskで自動的に開きます</div>
-            `;
 
             QRCode.toCanvas(
                 document.getElementById(canvasId),
@@ -578,8 +558,8 @@
 
             try {
                 console.log('Generating QR codes...');
-                generateQRCode('qrTransfer5', 'urlTransfer5', 'transfer5', 'テストショップ（0.5%）');
-                generateQRCode('qrTransfer10', 'urlTransfer10', 'transfer10', 'テストショップ（1%）');
+                generateQRCode('qrTransfer5', 'transfer5', 'テストショップ');
+                generateQRCode('qrTransfer10', 'transfer10', 'テストショップ');
                 console.log('QR codes generated successfully');
             } catch (error) {
                 console.error('QR生成エラー:', error);
