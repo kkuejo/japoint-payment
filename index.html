@@ -431,9 +431,14 @@
         <div class="notification-section">
             <div class="notification-header">
                 <h2>📢 決済通知</h2>
-                <div class="connection-status">
-                    <span class="status-dot connecting" id="statusDot"></span>
-                    <span id="statusText">接続中...</span>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <select id="historySelect" onchange="showHistoryDetail()" style="padding: 6px 10px; border-radius: 5px; border: 1px solid #ddd; font-size: 12px;">
+                        <option value="">履歴を選択...</option>
+                    </select>
+                    <div class="connection-status">
+                        <span class="status-dot connecting" id="statusDot"></span>
+                        <span id="statusText">接続中...</span>
+                    </div>
                 </div>
             </div>
             <div class="notification-container" id="notificationContainer">
@@ -680,10 +685,14 @@
             }
         }
 
+        // Store notification history
+        let notificationHistory = [];
+
         // Add notification to the container
         function addNotification(senderAddress, totalAmount, japointAmount, planType) {
             const container = document.getElementById('notificationContainer');
             const emptyMessage = document.getElementById('emptyMessage');
+            const historySelect = document.getElementById('historySelect');
 
             // Hide empty message
             if (emptyMessage) {
@@ -694,30 +703,47 @@
             const jpycAmount = ethers.formatUnits(totalAmount, 18);
             const japtAmount = ethers.formatUnits(japointAmount, 18);
 
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `notification-item ${planType === 'transfer10' ? 'point-1' : ''}`;
-
             const now = new Date();
             const timeStr = now.toLocaleTimeString('ja-JP');
+            const jpycFormatted = Math.floor(parseFloat(jpycAmount)).toLocaleString();
+            const japtFormatted = Math.floor(parseFloat(japtAmount)).toLocaleString();
+
+            // Store in history
+            const historyItem = {
+                time: timeStr,
+                sender: senderAddress,
+                jpyc: jpycFormatted,
+                japt: japtFormatted,
+                planType: planType
+            };
+            notificationHistory.unshift(historyItem);
+
+            // Keep only last 10 in history
+            if (notificationHistory.length > 10) {
+                notificationHistory.pop();
+            }
+
+            // Update history dropdown
+            updateHistoryDropdown();
+
+            // Clear existing notifications and show only latest one
+            const existingNotifications = container.querySelectorAll('.notification-item');
+            existingNotifications.forEach(n => n.remove());
+
+            // Create notification element for latest
+            const notification = document.createElement('div');
+            notification.className = `notification-item ${planType === 'transfer10' ? 'point-1' : ''}`;
 
             notification.innerHTML = `
                 <div class="notification-time">${timeStr}</div>
                 <div class="notification-message">
                     アドレス <span class="notification-address">${shortenAddress(senderAddress)}</span> から<br>
-                    <strong>${parseFloat(jpycAmount).toLocaleString()} JPYC</strong> の振り込みがあり、<br>
-                    <strong>${parseFloat(japtAmount).toLocaleString()} JAPT</strong> を還元しました
+                    <strong>${jpycFormatted} JPYC</strong> の振り込みがあり、<br>
+                    <strong>${japtFormatted} JAPT</strong> を還元しました
                 </div>
             `;
 
-            // Insert at the top
-            container.insertBefore(notification, container.firstChild);
-
-            // Keep only last 10 notifications
-            const notifications = container.querySelectorAll('.notification-item');
-            if (notifications.length > 10) {
-                notifications[notifications.length - 1].remove();
-            }
+            container.appendChild(notification);
 
             // Play notification sound (optional - browser may block)
             try {
@@ -725,6 +751,57 @@
                 audio.volume = 0.3;
                 audio.play().catch(() => {}); // Ignore errors
             } catch (e) {}
+        }
+
+        // Update history dropdown
+        function updateHistoryDropdown() {
+            const historySelect = document.getElementById('historySelect');
+            historySelect.innerHTML = '<option value="">履歴を選択...</option>';
+
+            notificationHistory.forEach((item, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${item.time} - ${item.jpyc} JPYC`;
+                historySelect.appendChild(option);
+            });
+        }
+
+        // Show selected history detail
+        function showHistoryDetail() {
+            const historySelect = document.getElementById('historySelect');
+            const container = document.getElementById('notificationContainer');
+            const index = historySelect.value;
+
+            if (index === '' || !notificationHistory[index]) {
+                return;
+            }
+
+            const item = notificationHistory[index];
+
+            // Clear existing notifications
+            const existingNotifications = container.querySelectorAll('.notification-item');
+            existingNotifications.forEach(n => n.remove());
+
+            // Show selected history item
+            const notification = document.createElement('div');
+            notification.className = `notification-item ${item.planType === 'transfer10' ? 'point-1' : ''}`;
+
+            notification.innerHTML = `
+                <div class="notification-time">${item.time}</div>
+                <div class="notification-message">
+                    アドレス <span class="notification-address">${shortenAddress(item.sender)}</span> から<br>
+                    <strong>${item.jpyc} JPYC</strong> の振り込みがあり、<br>
+                    <strong>${item.japt} JAPT</strong> を還元しました
+                </div>
+            `;
+
+            container.appendChild(notification);
+
+            // Hide empty message
+            const emptyMessage = document.getElementById('emptyMessage');
+            if (emptyMessage) {
+                emptyMessage.style.display = 'none';
+            }
         }
 
         // Shorten address for display
