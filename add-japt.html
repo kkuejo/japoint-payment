@@ -213,10 +213,17 @@
                 <span class="token-value">Sepolia</span>
             </div>
             <div class="address" id="tokenAddress">
-                0xE477E1789F928facAA0f2513bA0d18345c97123D
+                0x0db3A45B333112a34fF81eE9B6A86AC1385d37C4
             </div>
             <button class="copy-btn" onclick="copyAddress()">アドレスをコピー</button>
         </div>
+
+        <div id="networkStatus" style="margin-bottom: 15px; padding: 10px; border-radius: 8px; font-size: 14px; display: none;"></div>
+
+        <button class="add-button" id="switchButton" onclick="doSwitchNetwork()" style="display: none; background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); margin-bottom: 10px;">
+            <span>🔄</span>
+            <span>Sepoliaに切り替える</span>
+        </button>
 
         <button class="add-button" id="addButton" onclick="addToken()">
             <span>🦊</span>
@@ -228,7 +235,7 @@
         <div class="manual-instructions" id="manualInstructions">
             <h3>手動で追加する方法:</h3>
             <ol>
-                <li>MetaMaskを開く</li>
+                <li>MetaMaskでSepoliaネットワークに切り替える</li>
                 <li>「トークンをインポート」をタップ</li>
                 <li>上記のアドレスを貼り付け</li>
                 <li>シンボル: JAPT、小数点: 18</li>
@@ -240,17 +247,112 @@
     </div>
 
     <script>
-        const JAPT_ADDRESS = '0xE477E1789F928facAA0f2513bA0d18345c97123D';
+        const JAPT_ADDRESS = '0x0db3A45B333112a34fF81eE9B6A86AC1385d37C4';
+        const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111
+
+        let isOnSepolia = false;
+
+        // Update UI based on current network
+        function updateNetworkUI(chainId) {
+            const networkStatus = document.getElementById('networkStatus');
+            const switchButton = document.getElementById('switchButton');
+            const addButton = document.getElementById('addButton');
+
+            isOnSepolia = (chainId === SEPOLIA_CHAIN_ID);
+
+            networkStatus.style.display = 'block';
+
+            if (isOnSepolia) {
+                networkStatus.style.background = '#d4edda';
+                networkStatus.style.color = '#155724';
+                networkStatus.textContent = 'Sepolia Testnet に接続中';
+                switchButton.style.display = 'none';
+                addButton.style.display = 'flex';
+                addButton.disabled = false;
+            } else {
+                const chainName = getChainName(chainId);
+                networkStatus.style.background = '#f8d7da';
+                networkStatus.style.color = '#721c24';
+                networkStatus.textContent = chainName + ' に接続中 — JAPTトークンはSepoliaにあります';
+                switchButton.style.display = 'flex';
+                addButton.style.display = 'none';
+            }
+        }
+
+        function getChainName(chainId) {
+            const names = {
+                '0x1': 'Ethereum Mainnet',
+                '0x89': 'Polygon',
+                '0xa4b1': 'Arbitrum',
+                '0xa': 'Optimism',
+                '0xaa36a7': 'Sepolia',
+            };
+            return names[chainId] || 'Chain ' + parseInt(chainId, 16);
+        }
+
+        async function doSwitchNetwork() {
+            const switchButton = document.getElementById('switchButton');
+            try {
+                switchButton.disabled = true;
+                switchButton.innerHTML = '<span>🔄</span><span>切り替え中...</span>';
+                showStatus('MetaMaskでネットワーク切り替えを承認してください', 'info');
+
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: SEPOLIA_CHAIN_ID }],
+                    });
+                } catch (switchError) {
+                    if (switchError.code === 4902) {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: SEPOLIA_CHAIN_ID,
+                                chainName: 'Sepolia Testnet',
+                                nativeCurrency: { name: 'SepoliaETH', symbol: 'ETH', decimals: 18 },
+                                rpcUrls: ['https://rpc.sepolia.org'],
+                                blockExplorerUrls: ['https://sepolia.etherscan.io'],
+                            }],
+                        });
+                    } else {
+                        throw switchError;
+                    }
+                }
+
+                // After switch, re-check (page may reload on Mobile)
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                updateNetworkUI(chainId);
+
+                if (chainId === SEPOLIA_CHAIN_ID) {
+                    showStatus('Sepoliaに切り替わりました。「MetaMaskに追加」をタップしてください', 'info');
+                }
+            } catch (error) {
+                if (error.code === 4001) {
+                    showStatus('切り替えがキャンセルされました', 'error');
+                } else {
+                    showStatus('エラー: ' + error.message, 'error');
+                }
+            } finally {
+                switchButton.disabled = false;
+                switchButton.innerHTML = '<span>🔄</span><span>Sepoliaに切り替える</span>';
+            }
+        }
 
         async function addToken() {
             const button = document.getElementById('addButton');
-            const status = document.getElementById('status');
             const manualInstructions = document.getElementById('manualInstructions');
 
-            // Check if MetaMask is available
             if (typeof window.ethereum === 'undefined') {
                 showStatus('MetaMaskがインストールされていません。手動で追加してください。', 'error');
                 manualInstructions.style.display = 'block';
+                return;
+            }
+
+            // Final network check right before adding
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            if (chainId !== SEPOLIA_CHAIN_ID) {
+                updateNetworkUI(chainId);
+                showStatus('先にSepoliaネットワークに切り替えてください', 'error');
                 return;
             }
 
@@ -259,36 +361,50 @@
                 button.innerHTML = '<span>🔄</span><span>追加中...</span>';
                 showStatus('MetaMaskを確認してください...', 'info');
 
-                // Request to add token
-                const wasAdded = await window.ethereum.request({
-                    method: 'wallet_watchAsset',
-                    params: {
-                        type: 'ERC20',
-                        options: {
-                            address: JAPT_ADDRESS,
-                            symbol: 'JAPT',
-                            decimals: 18,
-                            image: '', // Optional: token image URL
+                // Try standard format first
+                let wasAdded = false;
+                try {
+                    wasAdded = await window.ethereum.request({
+                        method: 'wallet_watchAsset',
+                        params: {
+                            type: 'ERC20',
+                            options: {
+                                address: JAPT_ADDRESS,
+                                symbol: 'JAPT',
+                                decimals: 18,
+                            },
                         },
-                    },
-                });
+                    });
+                } catch (e1) {
+                    console.log('Format 1 failed, trying format 2:', e1.message);
+                    // Try alternate format (some MetaMask versions expect this)
+                    wasAdded = await window.ethereum.request({
+                        method: 'wallet_watchAsset',
+                        params: [
+                            {
+                                type: 'ERC20',
+                                options: {
+                                    address: JAPT_ADDRESS,
+                                    symbol: 'JAPT',
+                                    decimals: 18,
+                                },
+                            }
+                        ],
+                    });
+                }
 
                 if (wasAdded) {
-                    showStatus('✅ JAPTトークンが追加されました！', 'success');
+                    showStatus('JAPTトークンが追加されました！', 'success');
                 } else {
                     showStatus('トークンの追加がキャンセルされました', 'error');
                 }
 
             } catch (error) {
                 console.error('Error adding token:', error);
-
                 if (error.code === 4001) {
                     showStatus('ユーザーがキャンセルしました', 'error');
-                } else if (error.code === -32602) {
-                    showStatus('パラメータエラー。手動で追加してください。', 'error');
-                    manualInstructions.style.display = 'block';
                 } else {
-                    showStatus('エラー: ' + error.message, 'error');
+                    showStatus('[' + (error.code || '?') + '] ' + error.message + ' — 手動で追加してください。', 'error');
                     manualInstructions.style.display = 'block';
                 }
             } finally {
@@ -317,12 +433,29 @@
             });
         }
 
-        // Auto-trigger if opened in MetaMask browser
-        document.addEventListener('DOMContentLoaded', () => {
-            // Check if we're in MetaMask browser
-            if (window.ethereum && window.ethereum.isMetaMask) {
-                // Show a hint
-                showStatus('「MetaMaskに追加」ボタンをタップしてください', 'info');
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!window.ethereum) return;
+
+            try {
+                // Connect
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+                // Check current network and update UI
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                updateNetworkUI(chainId);
+
+                // Listen for network changes (works on both Desktop and Mobile)
+                window.ethereum.on('chainChanged', (newChainId) => {
+                    updateNetworkUI(newChainId);
+                    if (newChainId === SEPOLIA_CHAIN_ID) {
+                        showStatus('Sepoliaに切り替わりました。「MetaMaskに追加」をタップしてください', 'info');
+                    }
+                });
+
+            } catch (e) {
+                // Not connected yet - show add button anyway
+                document.getElementById('addButton').style.display = 'flex';
             }
         });
     </script>

@@ -46,6 +46,7 @@ contract DeployFullSystem is Script {
             jpyc,
             address(japointMint),
             shopAddress,
+            companyAddress,
             address(jpycWrapper)
         );
         console.log("Transfer10 deployed to:", address(transfer10));
@@ -55,6 +56,7 @@ contract DeployFullSystem is Script {
             jpyc,
             address(japointMint),
             shopAddress,
+            companyAddress,
             address(jpycWrapper)
         );
         console.log("Transfer5 deployed to:", address(transfer5));

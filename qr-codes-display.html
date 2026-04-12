@@ -244,10 +244,10 @@
         <div class="contract-info no-print">
             <h3>🔧 使用コントラクトアドレス（Sepolia Testnet）</h3>
             <div>JPYC: <span class="address">0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29</span></div>
-            <div>JPYCWrapper: <span class="address">0x23Df6B0D473F006C882668f69bBb917461f2A653</span></div>
-            <div>Transfer10: <span class="address">0x88a6ACE85aA82d3dD8a93977E3Bb6baa594a885E</span></div>
-            <div>Transfer5: <span class="address">0x4C9f456007a1e0833b550D19a65411BA2b5074c4</span></div>
-            <div>JAPoint: <span class="address">0xE477E1789F928facAA0f2513bA0d18345c97123D</span></div>
+            <div>JPYCWrapper: <span class="address">0xe2B4699B5CEf82d85a7Fa4B83adeA7268547Ced4</span></div>
+            <div>Transfer10: <span class="address">0x674728add6Fb268b7EAfE8ABd214DD50Fb72b86B</span></div>
+            <div>Transfer5: <span class="address">0xB60D10529e645e1AF85F7411Bce67d35bf71eA1E</span></div>
+            <div>JAPoint: <span class="address">0x0db3A45B333112a34fF81eE9B6A86AC1385d37C4</span></div>
         </div>
 
         <div class="qr-grid">
@@ -257,7 +257,7 @@
                 <div class="fee-info">手数料 0.5% プラン</div>
                 <div class="highlight">
                     <strong>お客様受取:</strong> 0.5% JAPT還元<br>
-                    <strong>ショップ受取:</strong> 99.5%
+                    <strong>ショップ受取:</strong> 99.4%
                 </div>
                 <div class="qr-code-container">
                     <canvas id="qrTransfer5"></canvas>
@@ -276,7 +276,7 @@
                 <div class="fee-info">手数料 1% プラン</div>
                 <div class="highlight">
                     <strong>お客様受取:</strong> 1% JAPT還元<br>
-                    <strong>ショップ受取:</strong> 99%
+                    <strong>ショップ受取:</strong> 98.9%
                 </div>
                 <div class="qr-code-container">
                     <canvas id="qrTransfer10"></canvas>
@@ -303,13 +303,13 @@
                 <tbody>
                     <tr>
                         <td><strong>手数料率</strong></td>
-                        <td>0.5%</td>
-                        <td>1%</td>
+                        <td>0.6%（JAPT 0.5% + 手数料 0.1%）</td>
+                        <td>1.1%（JAPT 1% + 手数料 0.1%）</td>
                     </tr>
                     <tr>
                         <td><strong>ショップ受取</strong></td>
-                        <td>99.5%</td>
-                        <td>99%</td>
+                        <td>99.4%</td>
+                        <td>98.9%</td>
                     </tr>
                     <tr>
                         <td><strong>お客様JAPT還元</strong></td>
@@ -318,8 +318,8 @@
                     </tr>
                     <tr>
                         <td><strong>会社受取</strong></td>
-                        <td>0.5%</td>
-                        <td>1%</td>
+                        <td>0.6%（JAPoint経由 0.5% + 手数料 0.1%）</td>
+                        <td>1.1%（JAPoint経由 1% + 手数料 0.1%）</td>
                     </tr>
                     <tr>
                         <td><strong>おすすめ用途</strong></td>
@@ -328,13 +328,13 @@
                     </tr>
                     <tr>
                         <td colspan="3" style="text-align: center; padding-top: 20px;">
-                            <strong>例: 1000 JPYD の決済の場合</strong>
+                            <strong>例: 1,000 JPYC の決済の場合</strong>
                         </td>
                     </tr>
                     <tr>
                         <td>ショップ受取</td>
-                        <td style="color: #4CAF50; font-weight: bold;">995 JPYD</td>
-                        <td style="color: #2196F3; font-weight: bold;">990 JPYD</td>
+                        <td style="color: #4CAF50; font-weight: bold;">994 JPYC</td>
+                        <td style="color: #2196F3; font-weight: bold;">989 JPYC</td>
                     </tr>
                     <tr>
                         <td>お客様JAPT</td>
@@ -343,8 +343,8 @@
                     </tr>
                     <tr>
                         <td>会社受取</td>
-                        <td>5 JPYD</td>
-                        <td>10 JPYD</td>
+                        <td>6 JPYC（JAPoint経由 5 + 手数料 1）</td>
+                        <td>11 JPYC（JAPoint経由 10 + 手数料 1）</td>
                     </tr>
                 </tbody>
             </table>
@@ -359,10 +359,10 @@
         // Contract addresses (from Sepolia deployment - JPYC version)
         const ADDRESSES = {
             jpyd: '0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29',  // JPYC on Sepolia
-            wrapper: '0x23Df6B0D473F006C882668f69bBb917461f2A653',
-            transfer10: '0x88a6ACE85aA82d3dD8a93977E3Bb6baa594a885E',
-            transfer5: '0x4C9f456007a1e0833b550D19a65411BA2b5074c4',
-            japt: '0xE477E1789F928facAA0f2513bA0d18345c97123D'
+            wrapper: '0xe2B4699B5CEf82d85a7Fa4B83adeA7268547Ced4',
+            transfer10: '0x674728add6Fb268b7EAfE8ABd214DD50Fb72b86B',
+            transfer5: '0xB60D10529e645e1AF85F7411Bce67d35bf71eA1E',
+            japt: '0x0db3A45B333112a34fF81eE9B6A86AC1385d37C4'
         };
 
         // Base URL for payment page

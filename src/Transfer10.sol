@@ -11,13 +11,15 @@ import "./JPYCWrapper.sol";
  * @title Transfer10
  * @dev Contract that receives JPYC and:
  *      - Sends 1% to JAPointMint and mints JAPoint to the sender
- *      - Sends remaining 99% to ShopAddress
+ *      - Sends 0.1% fee to companyAddress
+ *      - Sends remaining 98.9% to ShopAddress
  *
  * Flow (Automatic - just send JPYC):
  * 1. User sends JPYC directly to this contract via MetaMask
  * 2. Contract automatically processes the payment
  * 3. Contract sends 1% to JAPointMint and mints JAPoint to sender
- * 4. Contract sends 99% to ShopAddress
+ * 4. Contract sends 0.1% fee to companyAddress
+ * 5. Contract sends 98.9% to ShopAddress
  *
  * Alternative Flow (Manual):
  * 1. User approves JPYC to this contract
@@ -27,37 +29,44 @@ contract Transfer10 is Ownable, ITokenReceiver {
     IERC20 public jpycToken;
     JAPointMint public japointMint;
     address public shopAddress;
+    address public companyAddress;
     JPYCWrapper public jpycWrapper;
 
     event PaymentProcessed(
         address indexed sender,
         uint256 totalAmount,
         uint256 japointMintAmount,
+        uint256 feeAmount,
         uint256 shopAmount
     );
     event ShopAddressUpdated(address indexed oldAddress, address indexed newAddress);
+    event CompanyAddressUpdated(address indexed oldAddress, address indexed newAddress);
     event TokenReceived(address indexed from, uint256 amount, address indexed caller);
 
     /**
      * @dev Constructor
      * @param _jpycToken Address of JPYC token contract
      * @param _japointMint Address of JAPointMint contract
-     * @param _shopAddress Address to receive 99% of JPYC
+     * @param _shopAddress Address to receive 98.9% of JPYC
+     * @param _companyAddress Address to receive 0.1% fee
      * @param _jpycWrapper Address of JPYCWrapper contract (optional, can be address(0))
      */
     constructor(
         address _jpycToken,
         address _japointMint,
         address _shopAddress,
+        address _companyAddress,
         address _jpycWrapper
     ) Ownable(msg.sender) {
         require(_jpycToken != address(0), "Invalid JPYC address");
         require(_japointMint != address(0), "Invalid JAPointMint address");
         require(_shopAddress != address(0), "Invalid shop address");
+        require(_companyAddress != address(0), "Invalid company address");
 
         jpycToken = IERC20(_jpycToken);
         japointMint = JAPointMint(_japointMint);
         shopAddress = _shopAddress;
+        companyAddress = _companyAddress;
         if (_jpycWrapper != address(0)) {
             jpycWrapper = JPYCWrapper(_jpycWrapper);
         }
@@ -132,9 +141,10 @@ contract Transfer10 is Ownable, ITokenReceiver {
      * @param sender Address of the sender (who will receive JAPoint)
      */
     function _processPayment(uint256 amount, address sender) internal {
-        // Calculate 1% for JAPointMint and 99% for shop
+        // Calculate 1% for JAPointMint, 0.1% fee for company, 98.9% for shop
         uint256 japointMintAmount = amount / 100; // 1%
-        uint256 shopAmount = amount - japointMintAmount; // 99%
+        uint256 feeAmount = amount / 1000; // 0.1%
+        uint256 shopAmount = amount - japointMintAmount - feeAmount; // 98.9%
 
         // Approve JAPointMint to spend 1%
         require(
@@ -145,13 +155,19 @@ contract Transfer10 is Ownable, ITokenReceiver {
         // Call JAPointMint.transferJAPoint() with sender's address as recipient
         japointMint.transferJAPoint(sender);
 
-        // Transfer remaining 99% to shop address
+        // Transfer 0.1% fee to company address
+        require(
+            jpycToken.transfer(companyAddress, feeAmount),
+            "Transfer to company failed"
+        );
+
+        // Transfer remaining 98.9% to shop address
         require(
             jpycToken.transfer(shopAddress, shopAmount),
             "Transfer to shop failed"
         );
 
-        emit PaymentProcessed(sender, amount, japointMintAmount, shopAmount);
+        emit PaymentProcessed(sender, amount, japointMintAmount, feeAmount, shopAmount);
     }
 
     /**
@@ -191,6 +207,19 @@ contract Transfer10 is Ownable, ITokenReceiver {
         shopAddress = _newShopAddress;
 
         emit ShopAddressUpdated(oldAddress, _newShopAddress);
+    }
+
+    /**
+     * @dev Update company address (only owner)
+     * @param _newCompanyAddress New company address
+     */
+    function updateCompanyAddress(address _newCompanyAddress) external onlyOwner {
+        require(_newCompanyAddress != address(0), "Invalid company address");
+
+        address oldAddress = companyAddress;
+        companyAddress = _newCompanyAddress;
+
+        emit CompanyAddressUpdated(oldAddress, _newCompanyAddress);
     }
 
     /**

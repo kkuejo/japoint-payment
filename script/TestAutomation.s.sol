@@ -79,6 +79,7 @@ contract TestAutomation is Script {
             address(jpyc),
             address(japointMint),
             shopAddress,
+            companyAddress,
             address(jpycWrapper)
         );
         console.log("Transfer10 deployed at:", address(transfer10));
@@ -88,6 +89,7 @@ contract TestAutomation is Script {
             address(jpyc),
             address(japointMint),
             shopAddress,
+            companyAddress,
             address(jpycWrapper)
         );
         console.log("Transfer5 deployed at:", address(transfer5));

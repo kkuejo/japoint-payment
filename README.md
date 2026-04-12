@@ -9,36 +9,80 @@ A complete stablecoin payment and reward system built with Solidity and Foundry.
 
 ## System Architecture
 
+```mermaid
+graph TB
+    subgraph Frontend["Frontend (Cloudflare Pages)"]
+        INDEX["index.html<br/>(Shop)"]
+        MOBILE["mobile-payment.html<br/>(Customer)"]
+        DASH["dashboard.html<br/>(Admin)"]
+    end
+
+    subgraph Backend["Backend (Cloudflare Workers + D1)"]
+        API["Workers API"]
+        DB["Cloudflare D1<br/>(SQLite)"]
+    end
+
+    subgraph Chain["On-Chain (Sepolia Testnet)"]
+        JPYC["JPYC<br/>(ERC20 Stablecoin)"]
+        WRAPPER["JPYCWrapper<br/>(Notification Hook)"]
+        T5["Transfer5<br/>(0.5% JAPT + 0.1% Fee)"]
+        T10["Transfer10<br/>(1% JAPT + 0.1% Fee)"]
+        MINT["JAPointMint"]
+        JAPT["JAPT Token"]
+    end
+
+    MM["MetaMask Mobile"]
+
+    INDEX -->|"QR Code"| MOBILE
+    MOBILE -->|"Sign Tx"| MM
+    MM -->|"JPYC Transfer"| WRAPPER
+    WRAPPER -->|"onTokenReceived"| T5 & T10
+    T5 & T10 -->|"0.5%/1%"| MINT
+    T5 & T10 -->|"0.1%"| COMPANY["Company Address"]
+    T5 & T10 -->|"99.4%/98.9%"| SHOP["Shop Address"]
+    MINT -->|"JAPT"| CUSTOMER["Customer Wallet"]
+    MINT -->|"JPYC"| COMPANY
+    INDEX -->|"POST /api/payments"| API
+    API -->|"Read/Write"| DB
+    DB -->|"GET /api/*"| DASH
 ```
-Frontend (Cloudflare Pages)          Backend (Cloudflare Workers)
-┌─────────────────────────┐          ┌─────────────────────────┐
-│  index.html (Shop)      │          │  Workers API            │
-│  mobile-payment.html    │◄────────►│  - POST /api/payments   │
-│  dashboard.html         │          │  - GET /api/payments    │
-│  add-japt.html          │          │  - GET /api/summary     │
-└───────────┬─────────────┘          └───────────┬─────────────┘
-            │                                    │
-            ▼                                    ▼
-┌─────────────────────────┐          ┌─────────────────────────┐
-│  MetaMask Mobile        │          │  Cloudflare D1          │
-│  (User Wallet)          │          │  (SQLite Database)      │
-└───────────┬─────────────┘          └─────────────────────────┘
-            │
-            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Ethereum Sepolia Testnet                  │
-│  ┌──────────┐  ┌──────────────┐  ┌──────────────────────┐   │
-│  │   JPYC   │◄─│ JPYCWrapper  │─►│ Transfer10/Transfer5 │   │
-│  └──────────┘  └──────────────┘  └──────────┬───────────┘   │
-│                                              │               │
-│                                              ▼               │
-│                                  ┌──────────────────────┐   │
-│                                  │     JAPointMint      │   │
-│                                  │  ┌────────────────┐  │   │
-│                                  │  │   JAPT Token   │  │   │
-│                                  │  └────────────────┘  │   │
-│                                  └──────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+
+## Payment Flow
+
+```mermaid
+sequenceDiagram
+    participant C as Customer
+    participant MM as MetaMask
+    participant W as JPYCWrapper
+    participant T as Transfer5/10
+    participant M as JAPointMint
+    participant S as Shop
+    participant Co as Company
+
+    C->>MM: Scan QR & Enter Amount
+    MM->>W: Approve + Transfer JPYC
+    W->>T: onTokenReceived(from, amount)
+    T->>M: 0.5%/1% JPYC (approve + transferJAPoint)
+    M->>C: Send JAPT (reward)
+    M->>Co: Forward JPYC (via JAPointMint)
+    T->>Co: 0.1% JPYC (direct fee)
+    T->>S: 99.4%/98.9% JPYC (payment)
+```
+
+## Fund Distribution
+
+```mermaid
+pie title Transfer5 (0.5% Plan)
+    "Shop (99.4%)" : 99.4
+    "JAPoint Reward (0.5%)" : 0.5
+    "Company Fee (0.1%)" : 0.1
+```
+
+```mermaid
+pie title Transfer10 (1% Plan)
+    "Shop (98.9%)" : 98.9
+    "JAPoint Reward (1%)" : 1.0
+    "Company Fee (0.1%)" : 0.1
 ```
 
 ## Tech Stack
@@ -80,37 +124,37 @@ Frontend (Cloudflare Pages)          Backend (Cloudflare Workers)
 | JPYC | Japanese Yen stablecoin (existing) | - |
 | JAPT (JAPoint) | Reward token (ERC20) | - |
 | JPYCWrapper | Adds notification to JPYC transfers | - |
-| Transfer10 | Payment processor | 1% |
-| Transfer5 | Payment processor | 0.5% |
-| JAPointMint | Distributes JAPT rewards | - |
+| Transfer5 | Payment processor (low fee) | 0.6% (0.5% JAPT + 0.1% fee) |
+| Transfer10 | Payment processor (high reward) | 1.1% (1% JAPT + 0.1% fee) |
+| JAPointMint | Distributes JAPT rewards, forwards JPYC to company | - |
 
 ### Deployed Addresses (Sepolia)
 
 | Contract | Address |
 |----------|---------|
-| JAPT | `0xE477E1789F928facAA0f2513bA0d18345c97123D` |
+| JPYC | `0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29` |
+| JAPoint (JAPT) | `0x0db3A45B333112a34fF81eE9B6A86AC1385d37C4` |
+| JAPointMint | `0x9696781942f653c02c8Cded215bd182239867C96` |
+| JPYCWrapper | `0xe2B4699B5CEf82d85a7Fa4B83adeA7268547Ced4` |
+| Transfer10 | `0x674728add6Fb268b7EAfE8ABd214DD50Fb72b86B` |
+| Transfer5 | `0xB60D10529e645e1AF85F7411Bce67d35bf71eA1E` |
 
-Other contract addresses are configured via URL parameters.
+### Configuration Addresses
 
-## Payment Flow
-
-1. Customer scans QR code with MetaMask Mobile
-2. Opens mobile-payment.html with contract addresses in URL
-3. Customer enters amount and taps "Pay"
-4. JPYC approve transaction (MetaMask confirmation)
-5. JPYCWrapper.transfer() executes:
-   - 1%/0.5% fee → JAPointMint → JAPT sent to customer
-   - 99%/99.5% → Shop address
-6. Payment recorded to D1 database via API
+| Role | Address |
+|------|---------|
+| Company | `0x79a1cE843bA4Aa4Bd833D91c925789f242Ea1F84` |
+| Shop | `0x7Abe610C0d12C261A281d4eDD8A68796fd044d90` |
 
 ## Frontend Pages
 
 | File | Purpose |
 |------|---------|
-| `index.html` | Shop dashboard (QR generation, notifications) |
-| `mobile-payment.html` | Customer payment page (mobile) |
-| `dashboard.html` | Admin dashboard (payment history, stats) |
-| `add-japt.html` | Add JAPT token to MetaMask |
+| `index.html` | Shop dashboard (QR generation, payment notifications) |
+| `mobile-payment.html` | Customer payment page (mobile-optimized) |
+| `dashboard.html` | Admin dashboard (payment history, daily stats) |
+| `qr-codes-display.html` | Printable QR codes with plan comparison |
+| `qr-generator.html` | QR code generator with custom settings |
 
 ## API Endpoints
 
@@ -118,10 +162,11 @@ Base URL: `https://japoint-api.kkuejo.workers.dev`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/payments` | Record payment |
-| GET | `/api/payments` | Get payment history |
-| GET | `/api/payments/summary` | Get summary stats |
-| GET | `/api/payments/daily` | Get daily summary |
+| POST | `/api/payments` | Record a payment |
+| GET | `/api/payments` | Get payment history (with filters) |
+| GET | `/api/payments/summary` | Get aggregated summary by plan |
+| GET | `/api/payments/daily` | Get daily breakdown |
+| GET | `/api/health` | Health check |
 
 ## Development
 
@@ -137,11 +182,14 @@ Base URL: `https://japoint-api.kkuejo.workers.dev`
 # Build contracts
 forge build
 
-# Run tests
+# Run tests (33 tests)
 forge test
 
 # Deploy to Sepolia
-forge script script/DeployFullSystem.s.sol --rpc-url sepolia --broadcast
+source .env
+forge script script/DeployFullSystem.s.sol \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --broadcast --verify -vvv
 ```
 
 ### Workers API Development
@@ -155,13 +203,19 @@ wrangler dev
 # Deploy
 wrangler deploy
 
-# D1 database operations
-wrangler d1 execute japoint-payments --file=./schema.sql
+# D1 database setup
+wrangler d1 execute japoint-payments --remote --file=schema.sql
 ```
 
 ### Frontend Deployment
 
-Frontend is automatically deployed to Cloudflare Pages when pushed to `gh-pages` branch.
+```bash
+cd workers
+CLOUDFLARE_ACCOUNT_ID=<account_id> \
+  wrangler pages deploy /path/to/JAPOINT \
+  --project-name japoint-payment \
+  --branch gh-pages
+```
 
 ## Deployment Info
 
@@ -170,21 +224,25 @@ Frontend is automatically deployed to Cloudflare Pages when pushed to `gh-pages`
 | Cloudflare Pages | https://japoint-payment.pages.dev |
 | Cloudflare Workers | https://japoint-api.kkuejo.workers.dev |
 | D1 Database | `15ff8ac7-fea5-491b-adf3-dcca95c5534c` |
-| GitHub Repo | kkuejo/japoint-payment |
 
 ## Project Structure
 
 ```
 .
 ├── src/                      # Smart contracts
-│   ├── JAPoint.sol           # JAPT reward token
-│   ├── JAPointMint.sol       # JAPT distribution
+│   ├── JAPoint.sol           # JAPT reward token (ERC20)
+│   ├── JAPointMint.sol       # JAPT distribution + JPYC forwarding
 │   ├── JPYCWrapper.sol       # JPYC notification wrapper
-│   ├── Transfer10.sol        # 1% fee payment processor
-│   ├── Transfer5.sol         # 0.5% fee payment processor
-│   └── ITokenReceiver.sol    # Notification interface
-├── test/                     # Contract tests
+│   ├── Transfer10.sol        # 1% JAPT + 0.1% fee payment processor
+│   ├── Transfer5.sol         # 0.5% JAPT + 0.1% fee payment processor
+│   └── ITokenReceiver.sol    # Token received notification interface
+├── test/                     # Contract tests (33 tests)
+│   ├── Transfer10.t.sol      # Transfer10 tests (19 tests)
+│   ├── JAPointMint.t.sol     # JAPointMint tests (14 tests)
+│   └── mocks/MockJPYC.sol    # Mock JPYC for testing
 ├── script/                   # Deployment scripts
+│   ├── DeployFullSystem.s.sol # Full system deployment
+│   └── TestAutomation.s.sol  # Automated testing script
 ├── workers/                  # Cloudflare Workers API
 │   ├── src/index.js          # API endpoints
 │   ├── schema.sql            # D1 database schema
@@ -192,15 +250,10 @@ Frontend is automatically deployed to Cloudflare Pages when pushed to `gh-pages`
 ├── index.html                # Shop dashboard
 ├── mobile-payment.html       # Mobile payment page
 ├── dashboard.html            # Admin dashboard
-├── add-japt.html             # Add JAPT to MetaMask
-└── system.md                 # Full system documentation
+├── qr-codes-display.html     # Printable QR codes
+├── qr-generator.html         # QR code generator
+└── add-japt.html             # Add JAPT to MetaMask
 ```
-
-## Documentation
-
-- [system.md](system.md) - Full system architecture and technical details
-- [DEPLOYMENT.md](DEPLOYMENT.md) - Deployment instructions
-- [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md) - Setup guide
 
 ## License
 

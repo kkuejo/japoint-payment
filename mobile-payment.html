@@ -321,8 +321,8 @@
         let wrapperContract;
         let japtContract;
 
-        // Set fee rate
-        const feeRate = config.contractType === 'transfer5' ? 0.5 : 1.0;
+        // Set fee rate (JAPoint + 0.1% company fee)
+        const feeRate = config.contractType === 'transfer5' ? 0.6 : 1.1;
         document.getElementById('feeRate').textContent = feeRate + '%';
         document.getElementById('shopName').textContent = config.shopName;
 
@@ -479,15 +479,17 @@
         function updateBreakdown() {
             const amount = getAmountValue();
 
-            const feePercentage = config.contractType === 'transfer5' ? 0.005 : 0.01;
-            const fee = amount * feePercentage;
-            const shopReceives = amount - fee;
-            const reward = fee; // Same as fee amount in JAPT
+            const japtPercentage = config.contractType === 'transfer5' ? 0.005 : 0.01; // 0.5% or 1%
+            const companyFeePercentage = 0.001; // 0.1%
+            const japtAmount = amount * japtPercentage;
+            const companyFee = amount * companyFeePercentage;
+            const totalFee = japtAmount + companyFee;
+            const shopReceives = amount - totalFee;
 
             document.getElementById('totalAmount').textContent = formatWithCommas(amount) + ' JPYC';
             document.getElementById('shopAmount').textContent = formatWithCommas(shopReceives) + ' JPYC';
-            document.getElementById('feeAmount').textContent = formatWithCommas(fee) + ' JPYC';
-            document.getElementById('rewardAmount').textContent = formatWithCommas(reward) + ' JAPT';
+            document.getElementById('feeAmount').textContent = formatWithCommas(totalFee) + ' JPYC';
+            document.getElementById('rewardAmount').textContent = formatWithCommas(japtAmount) + ' JAPT';
 
             // Enable/disable pay button
             document.getElementById('payButton').disabled = amount <= 0;

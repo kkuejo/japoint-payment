@@ -464,7 +464,7 @@
                 <div class="qr-title">🟢 ポイント 0.5% 還元</div>
                 <div class="highlight">
                     <strong>お客様受取:</strong> 0.5% JAPT還元<br>
-                    <strong>ショップ受取:</strong> 99.5%
+                    <strong>ショップ受取:</strong> 99.4%
                 </div>
                 <div class="qr-code-container">
                     <canvas id="qrTransfer5"></canvas>
@@ -481,7 +481,7 @@
                 <div class="qr-title">🔵 ポイント 1% 還元</div>
                 <div class="highlight">
                     <strong>お客様受取:</strong> 1% JAPT還元<br>
-                    <strong>ショップ受取:</strong> 99%
+                    <strong>ショップ受取:</strong> 98.9%
                 </div>
                 <div class="qr-code-container">
                     <canvas id="qrTransfer10"></canvas>
@@ -505,22 +505,6 @@
 
         </div>
 
-        <!-- Add JAPT to MetaMask -->
-        <div class="contract-section">
-            <button class="toggle-btn" onclick="toggleAddJapt()" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">
-                🦊 JAPTをMetaMaskに追加
-            </button>
-            <div id="addJaptSection" style="display: none; margin-top: 15px; text-align: center;">
-                <p style="margin-bottom: 15px; color: #666;">QRコードをスキャンしてJAPTトークンをMetaMaskに追加</p>
-                <div style="background: white; padding: 20px; border-radius: 10px; display: inline-block;">
-                    <canvas id="japtQrCode"></canvas>
-                </div>
-                <p style="margin-top: 15px; font-size: 12px; color: #888;">
-                    JAPT: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">0xE477E1789F928facAA0f2513bA0d18345c97123D</code>
-                </p>
-            </div>
-        </div>
-
         <!-- Quick Start (Collapsible) -->
         <div class="contract-section">
             <button class="toggle-btn" onclick="toggleQuickStart()">
@@ -529,17 +513,23 @@
             <div class="info-box" id="quickStartInfo" style="display: none; text-align: left; margin-top: 15px;">
                 <h2>🚀 クイックスタート</h2>
                 <ol style="padding-left: 20px; color: #333;">
-                    <li style="margin-bottom: 15px;"><strong>MetaMask MobileでSepolia ETHのネットワークを追加:</strong>
+                    <li style="margin-bottom: 15px;"><strong>MetaMask MobileでSepolia ETHのネットワークを追加(無い場合のみ):</strong>
                         <ul style="margin-top: 5px; padding-left: 20px;">
                             <li>ネットワーク名: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">Sepolia Test Network</code></li>
                             <li>RPC URL: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">https://ethereum-sepolia-rpc.publicnode.com</code></li>
-                            <li>Chain ID: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">11155111</code></li>
-                            <li>通貨記号: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">ETH</code></li>
+                            <li>RPC名: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">Sepolia (Public Node)</code></li>
+                            <li>チェーンID: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">11155111</code></li>
+                            <li>シンボル: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">ETH</code></li>
                         </ul>
                     </li>
-                    <li style="margin-bottom: 15px;"><strong>MetaMask MobileでSepoliaのJPYCトークンを追加:</strong>
+                    <li style="margin-bottom: 15px;"><strong>SepoliaのJPYCトークンを追加:</strong>
                         <ul style="margin-top: 5px; padding-left: 20px;">
-                            <li>トークンアドレス: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29</code></li>
+                            <li>Address: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29</code></li>
+                        </ul>
+                    </li>
+                    <li style="margin-bottom: 15px;"><strong>SepoliaのJAPT(JAポイント)トークンを追加:</strong>
+                        <ul style="margin-top: 5px; padding-left: 20px;">
+                            <li>Address: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 4px;">0x0db3A45B333112a34fF81eE9B6A86AC1385d37C4</code></li>
                         </ul>
                     </li>
                     <li style="margin-bottom: 15px;"><strong>Sepolia ETHを入手:</strong><br>
@@ -571,13 +561,13 @@
                     <tbody>
                         <tr>
                             <td><strong>手数料率</strong></td>
-                            <td>0.5%</td>
-                            <td>1%</td>
+                            <td>0.6%（JAPT 0.5% + 手数料 0.1%）</td>
+                            <td>1.1%（JAPT 1% + 手数料 0.1%）</td>
                         </tr>
                         <tr>
                             <td><strong>ショップ受取</strong></td>
-                            <td>99.5%</td>
-                            <td>99%</td>
+                            <td>99.4%</td>
+                            <td>98.9%</td>
                         </tr>
                         <tr>
                             <td><strong>お客様JAPT還元</strong></td>
@@ -586,8 +576,8 @@
                         </tr>
                         <tr>
                             <td><strong>会社受取</strong></td>
-                            <td>0.5%</td>
-                            <td>1%</td>
+                            <td>0.6%（JAPoint経由 0.5% + 手数料 0.1%）</td>
+                            <td>1.1%（JAPoint経由 1% + 手数料 0.1%）</td>
                         </tr>
                         <tr>
                             <td><strong>おすすめ用途</strong></td>
@@ -596,13 +586,13 @@
                         </tr>
                         <tr>
                             <td colspan="3" style="text-align: center; padding-top: 20px;">
-                                <strong>例: 1000 JPYC の決済の場合</strong>
+                                <strong>例: 1,000 JPYC の決済の場合</strong>
                             </td>
                         </tr>
                         <tr>
                             <td>ショップ受取</td>
-                            <td style="color: #4CAF50; font-weight: bold;">995 JPYC</td>
-                            <td style="color: #2196F3; font-weight: bold;">990 JPYC</td>
+                            <td style="color: #4CAF50; font-weight: bold;">994 JPYC</td>
+                            <td style="color: #2196F3; font-weight: bold;">989 JPYC</td>
                         </tr>
                         <tr>
                             <td>お客様JAPT</td>
@@ -611,8 +601,8 @@
                         </tr>
                         <tr>
                             <td>会社受取</td>
-                            <td>5 JPYC</td>
-                            <td>10 JPYC</td>
+                            <td>6 JPYC（JAPoint経由 5 + 手数料 1）</td>
+                            <td>11 JPYC（JAPoint経由 10 + 手数料 1）</td>
                         </tr>
                     </tbody>
                 </table>
@@ -627,10 +617,10 @@
             <div class="contract-info" id="contractInfo" style="display: none;">
                 <h3>使用コントラクトアドレス（Sepolia Testnet）</h3>
                 <div>JPYC: <span class="address">0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29</span></div>
-                <div>JPYCWrapper: <span class="address">0x23Df6B0D473F006C882668f69bBb917461f2A653</span></div>
-                <div>Transfer10: <span class="address">0x88a6ACE85aA82d3dD8a93977E3Bb6baa594a885E</span></div>
-                <div>Transfer5: <span class="address">0x4C9f456007a1e0833b550D19a65411BA2b5074c4</span></div>
-                <div>JAPoint: <span class="address">0xE477E1789F928facAA0f2513bA0d18345c97123D</span></div>
+                <div>JPYCWrapper: <span class="address">0xe2B4699B5CEf82d85a7Fa4B83adeA7268547Ced4</span></div>
+                <div>Transfer10: <span class="address">0x674728add6Fb268b7EAfE8ABd214DD50Fb72b86B</span></div>
+                <div>Transfer5: <span class="address">0xB60D10529e645e1AF85F7411Bce67d35bf71eA1E</span></div>
+                <div>JAPoint: <span class="address">0x0db3A45B333112a34fF81eE9B6A86AC1385d37C4</span></div>
             </div>
         </div>
 
@@ -650,10 +640,10 @@
         // Contract addresses (from Sepolia deployment - JPYC version)
         const ADDRESSES = {
             jpyc: '0xE7C3D8C9a439feDe00D2600032D5dB0Be71C3c29',
-            wrapper: '0x23Df6B0D473F006C882668f69bBb917461f2A653',
-            transfer10: '0x88a6ACE85aA82d3dD8a93977E3Bb6baa594a885E',
-            transfer5: '0x4C9f456007a1e0833b550D19a65411BA2b5074c4',
-            japt: '0xE477E1789F928facAA0f2513bA0d18345c97123D'
+            wrapper: '0xe2B4699B5CEf82d85a7Fa4B83adeA7268547Ced4',
+            transfer10: '0x674728add6Fb268b7EAfE8ABd214DD50Fb72b86B',
+            transfer5: '0xB60D10529e645e1AF85F7411Bce67d35bf71eA1E',
+            japt: '0x0db3A45B333112a34fF81eE9B6A86AC1385d37C4'
         };
 
         // Sepolia RPC URL (public endpoint)
@@ -662,9 +652,9 @@
         // JAPOINT API URL (Cloudflare Workers)
         const API_URL = 'https://japoint-api.kkuejo.workers.dev';
 
-        // PaymentProcessed event ABI
+        // PaymentProcessed event ABI (includes feeAmount for 0.1% company fee)
         const PAYMENT_EVENT_ABI = [
-            'event PaymentProcessed(address indexed sender, uint256 totalAmount, uint256 japointMintAmount, uint256 shopAmount)'
+            'event PaymentProcessed(address indexed sender, uint256 totalAmount, uint256 japointMintAmount, uint256 feeAmount, uint256 shopAmount)'
         ];
 
         // Base URL for payment page
@@ -688,17 +678,17 @@
                 transfer10Contract = new ethers.Contract(ADDRESSES.transfer10, PAYMENT_EVENT_ABI, provider);
 
                 // Listen for PaymentProcessed events on Transfer5
-                transfer5Contract.on('PaymentProcessed', async (sender, totalAmount, japointMintAmount, shopAmount, event) => {
-                    console.log('Transfer5 PaymentProcessed event:', { sender, totalAmount, japointMintAmount, shopAmount });
+                transfer5Contract.on('PaymentProcessed', async (sender, totalAmount, japointMintAmount, feeAmount, shopAmount, event) => {
+                    console.log('Transfer5 PaymentProcessed event:', { sender, totalAmount, japointMintAmount, feeAmount, shopAmount });
                     addNotification(sender, totalAmount, japointMintAmount, 'transfer5');
-                    await savePaymentToAPI(event, sender, totalAmount, japointMintAmount, shopAmount, 'transfer5');
+                    await savePaymentToAPI(event, sender, totalAmount, japointMintAmount, feeAmount, shopAmount, 'transfer5');
                 });
 
                 // Listen for PaymentProcessed events on Transfer10
-                transfer10Contract.on('PaymentProcessed', async (sender, totalAmount, japointMintAmount, shopAmount, event) => {
-                    console.log('Transfer10 PaymentProcessed event:', { sender, totalAmount, japointMintAmount, shopAmount });
+                transfer10Contract.on('PaymentProcessed', async (sender, totalAmount, japointMintAmount, feeAmount, shopAmount, event) => {
+                    console.log('Transfer10 PaymentProcessed event:', { sender, totalAmount, japointMintAmount, feeAmount, shopAmount });
                     addNotification(sender, totalAmount, japointMintAmount, 'transfer10');
-                    await savePaymentToAPI(event, sender, totalAmount, japointMintAmount, shopAmount, 'transfer10');
+                    await savePaymentToAPI(event, sender, totalAmount, japointMintAmount, feeAmount, shopAmount, 'transfer10');
                 });
 
                 // Update connection status
@@ -714,19 +704,20 @@
         }
 
         // Save payment to API
-        async function savePaymentToAPI(event, sender, totalAmount, japointMintAmount, shopAmount, planType) {
+        async function savePaymentToAPI(event, sender, totalAmount, japointMintAmount, feeAmount, shopAmount, planType) {
             try {
                 const block = await event.getBlock();
-                const companyAmount = japointMintAmount; // Company receives same as JAPT minted
+                // Company receives: japointMintAmount (via JAPointMint) + feeAmount (direct 0.1%)
+                const companyTotal = japointMintAmount + feeAmount;
 
                 const paymentData = {
                     txHash: event.transactionHash,
                     senderAddress: sender,
                     shopAddress: planType === 'transfer5' ? ADDRESSES.transfer5 : ADDRESSES.transfer10,
-                    companyAddress: ADDRESSES.japt, // JAPointMint address
+                    companyAddress: ADDRESSES.japt,
                     totalAmount: ethers.formatUnits(totalAmount, 18),
                     shopAmount: ethers.formatUnits(shopAmount, 18),
-                    companyAmount: ethers.formatUnits(companyAmount, 18),
+                    companyAmount: ethers.formatUnits(companyTotal, 18),
                     japtAmount: ethers.formatUnits(japointMintAmount, 18),
                     planType: planType,
                     blockNumber: event.blockNumber,
@@ -963,55 +954,6 @@
             } catch (error) {
                 console.error('QR生成エラー:', error);
                 alert('QRコード生成中にエラーが発生しました: ' + error.message);
-            }
-        }
-
-        let japtQrGenerated = false;
-        function generateJaptQRCode() {
-            if (japtQrGenerated) return;
-
-            // Create URL to add-japt.html page (wrapped in MetaMask deeplink)
-            let addJaptUrl;
-            if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1') || window.location.hostname.includes('192.168') || window.location.hostname.includes('172.')) {
-                // Local development - direct URL
-                addJaptUrl = window.location.origin + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/add-japt.html';
-            } else {
-                // Production - MetaMask deeplink to add-japt.html
-                const dappUrl = window.location.hostname + window.location.pathname.replace('index.html', '').replace(/\/$/, '') + '/add-japt.html';
-                addJaptUrl = `https://metamask.app.link/dapp/${dappUrl}`;
-            }
-
-            QRCode.toCanvas(
-                document.getElementById('japtQrCode'),
-                addJaptUrl,
-                {
-                    width: 200,
-                    margin: 2,
-                    color: {
-                        dark: '#000000',
-                        light: '#FFFFFF'
-                    }
-                },
-                function (error) {
-                    if (error) {
-                        console.error('JAPT QR生成エラー:', error);
-                    } else {
-                        japtQrGenerated = true;
-                    }
-                }
-            );
-        }
-
-        function toggleAddJapt() {
-            const section = document.getElementById('addJaptSection');
-            const btn = section.previousElementSibling;
-            if (section.style.display === 'none') {
-                section.style.display = 'block';
-                btn.textContent = '🦊 JAPTをMetaMaskに追加を非表示';
-                generateJaptQRCode();
-            } else {
-                section.style.display = 'none';
-                btn.textContent = '🦊 JAPTをMetaMaskに追加';
             }
         }
 

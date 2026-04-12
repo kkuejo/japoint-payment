@@ -31,9 +31,11 @@ contract Transfer10Test is Test {
         address indexed sender,
         uint256 totalAmount,
         uint256 japointMintAmount,
+        uint256 feeAmount,
         uint256 shopAmount
     );
     event ShopAddressUpdated(address indexed oldAddress, address indexed newAddress);
+    event CompanyAddressUpdated(address indexed oldAddress, address indexed newAddress);
 
     function setUp() public {
         owner = address(this);
@@ -63,6 +65,7 @@ contract Transfer10Test is Test {
             address(jpyc),
             address(japointMint),
             shopAddress,
+            companyAddress,
             address(jpycWrapper)
         );
 
@@ -84,7 +87,8 @@ contract Transfer10Test is Test {
     function testProcessPaymentSuccess() public {
         uint256 paymentAmount = 10000 * 10**18; // 10,000 JPYC
         uint256 expectedJAPointMintAmount = paymentAmount / 100; // 1% = 100 JPYC
-        uint256 expectedShopAmount = paymentAmount - expectedJAPointMintAmount; // 99% = 9,900 JPYC
+        uint256 expectedFeeAmount = paymentAmount / 1000; // 0.1% = 10 JPYC
+        uint256 expectedShopAmount = paymentAmount - expectedJAPointMintAmount - expectedFeeAmount; // 98.9% = 9,890 JPYC
 
         // User1 approves JPYC to Transfer10
         vm.startPrank(user1);
@@ -92,7 +96,7 @@ contract Transfer10Test is Test {
 
         // User1 calls processPayment
         vm.expectEmit(true, false, false, true, address(transfer10));
-        emit PaymentProcessed(user1, paymentAmount, expectedJAPointMintAmount, expectedShopAmount);
+        emit PaymentProcessed(user1, paymentAmount, expectedJAPointMintAmount, expectedFeeAmount, expectedShopAmount);
         transfer10.processPayment();
         vm.stopPrank();
 
@@ -100,11 +104,11 @@ contract Transfer10Test is Test {
         // User1 should have received JAPoint (1% worth)
         assertEq(japoint.balanceOf(user1), expectedJAPointMintAmount, "User1 should receive JAPoint");
 
-        // Shop should have received 99% of JPYC
-        assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount, "Shop should receive 99% JPYC");
+        // Shop should have received 98.9% of JPYC
+        assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount, "Shop should receive 98.9% JPYC");
 
-        // Company should have received 1% of JPYC (from JAPointMint)
-        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount, "Company should receive 1% JPYC");
+        // Company should have received 1% (from JAPointMint) + 0.1% fee (from Transfer10)
+        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount + expectedFeeAmount, "Company should receive 1.1% JPYC");
 
         // Transfer10 should not hold any JPYC
         assertEq(jpyc.balanceOf(address(transfer10)), 0, "Transfer10 should not hold JPYC");
@@ -134,11 +138,12 @@ contract Transfer10Test is Test {
 
         uint256 totalPayment = firstPayment + secondPayment;
         uint256 expectedJAPointTotal = totalPayment / 100; // 1%
-        uint256 expectedShopTotal = totalPayment - expectedJAPointTotal; // 99%
+        uint256 expectedFeeTotal = totalPayment / 1000; // 0.1%
+        uint256 expectedShopTotal = totalPayment - expectedJAPointTotal - expectedFeeTotal; // 98.9%
 
         assertEq(japoint.balanceOf(user1), expectedJAPointTotal);
         assertEq(jpyc.balanceOf(shopAddress), expectedShopTotal);
-        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointTotal);
+        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointTotal + expectedFeeTotal);
     }
 
     function testProcessPaymentFailsWithoutApproval() public {
@@ -151,7 +156,8 @@ contract Transfer10Test is Test {
     function testProcessPaymentWithSmallAmount() public {
         uint256 paymentAmount = 100 * 10**18; // 100 JPYC
         uint256 expectedJAPointMintAmount = 1 * 10**18; // 1% = 1 JPYC
-        uint256 expectedShopAmount = 99 * 10**18; // 99% = 99 JPYC
+        uint256 expectedFeeAmount = paymentAmount / 1000; // 0.1% = 0.1 JPYC
+        uint256 expectedShopAmount = paymentAmount - expectedJAPointMintAmount - expectedFeeAmount; // 98.9%
 
         vm.startPrank(user1);
         jpyc.approve(address(transfer10), paymentAmount);
@@ -160,13 +166,14 @@ contract Transfer10Test is Test {
 
         assertEq(japoint.balanceOf(user1), expectedJAPointMintAmount);
         assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount);
-        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount);
+        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount + expectedFeeAmount);
     }
 
     function testProcessPaymentWithLargeAmount() public {
         uint256 paymentAmount = 50000 * 10**18; // 50,000 JPYC
         uint256 expectedJAPointMintAmount = 500 * 10**18; // 1% = 500 JPYC
-        uint256 expectedShopAmount = 49500 * 10**18; // 99% = 49,500 JPYC
+        uint256 expectedFeeAmount = 50 * 10**18; // 0.1% = 50 JPYC
+        uint256 expectedShopAmount = paymentAmount - expectedJAPointMintAmount - expectedFeeAmount; // 98.9% = 49,450 JPYC
 
         vm.startPrank(user1);
         jpyc.approve(address(transfer10), paymentAmount);
@@ -175,7 +182,7 @@ contract Transfer10Test is Test {
 
         assertEq(japoint.balanceOf(user1), expectedJAPointMintAmount);
         assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount);
-        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount);
+        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount + expectedFeeAmount);
     }
 
     function testUpdateShopAddress() public {
@@ -209,10 +216,11 @@ contract Transfer10Test is Test {
 
     function testFuzzProcessPayment(uint256 amount) public {
         // Bound the amount to reasonable values
-        amount = bound(amount, 100, 100000 * 10**18);
+        amount = bound(amount, 1000, 100000 * 10**18);
 
         uint256 expectedJAPointMintAmount = amount / 100; // 1%
-        uint256 expectedShopAmount = amount - expectedJAPointMintAmount; // 99%
+        uint256 expectedFeeAmount = amount / 1000; // 0.1%
+        uint256 expectedShopAmount = amount - expectedJAPointMintAmount - expectedFeeAmount; // 98.9%
 
         vm.startPrank(user1);
         jpyc.approve(address(transfer10), amount);
@@ -221,27 +229,32 @@ contract Transfer10Test is Test {
 
         assertEq(japoint.balanceOf(user1), expectedJAPointMintAmount);
         assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount);
-        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount);
+        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount + expectedFeeAmount);
     }
 
     function testConstructorValidation() public {
         // Test invalid JPYC address
         vm.expectRevert("Invalid JPYC address");
-        new Transfer10(address(0), address(japointMint), shopAddress, address(0));
+        new Transfer10(address(0), address(japointMint), shopAddress, companyAddress, address(0));
 
         // Test invalid JAPointMint address
         vm.expectRevert("Invalid JAPointMint address");
-        new Transfer10(address(jpyc), address(0), shopAddress, address(0));
+        new Transfer10(address(jpyc), address(0), shopAddress, companyAddress, address(0));
 
         // Test invalid shop address
         vm.expectRevert("Invalid shop address");
-        new Transfer10(address(jpyc), address(japointMint), address(0), address(0));
+        new Transfer10(address(jpyc), address(japointMint), address(0), companyAddress, address(0));
+
+        // Test invalid company address
+        vm.expectRevert("Invalid company address");
+        new Transfer10(address(jpyc), address(japointMint), shopAddress, address(0), address(0));
     }
 
     function testProcessPaymentDistributionAccuracy() public {
         uint256 paymentAmount = 12345 * 10**18; // Odd number to test rounding
-        uint256 expectedJAPointMintAmount = paymentAmount / 100; // 123.45 * 10^18
-        uint256 expectedShopAmount = paymentAmount - expectedJAPointMintAmount;
+        uint256 expectedJAPointMintAmount = paymentAmount / 100;
+        uint256 expectedFeeAmount = paymentAmount / 1000;
+        uint256 expectedShopAmount = paymentAmount - expectedJAPointMintAmount - expectedFeeAmount;
 
         vm.startPrank(user1);
         jpyc.approve(address(transfer10), paymentAmount);
@@ -251,11 +264,11 @@ contract Transfer10Test is Test {
         // Verify exact amounts
         assertEq(japoint.balanceOf(user1), expectedJAPointMintAmount);
         assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount);
-        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount);
+        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount + expectedFeeAmount);
 
         // Verify total adds up
         assertEq(
-            expectedJAPointMintAmount + expectedShopAmount,
+            expectedJAPointMintAmount + expectedFeeAmount + expectedShopAmount,
             paymentAmount,
             "Total should equal payment amount"
         );
@@ -264,7 +277,8 @@ contract Transfer10Test is Test {
     function testDepositSuccess() public {
         uint256 depositAmount = 5000 * 10**18; // 5,000 JPYC
         uint256 expectedJAPointMintAmount = depositAmount / 100; // 1% = 50 JPYC
-        uint256 expectedShopAmount = depositAmount - expectedJAPointMintAmount; // 99% = 4,950 JPYC
+        uint256 expectedFeeAmount = depositAmount / 1000; // 0.1% = 5 JPYC
+        uint256 expectedShopAmount = depositAmount - expectedJAPointMintAmount - expectedFeeAmount; // 98.9% = 4,945 JPYC
 
         // User1 approves JPYC to Transfer10
         vm.startPrank(user1);
@@ -272,14 +286,14 @@ contract Transfer10Test is Test {
 
         // User1 calls deposit with specific amount
         vm.expectEmit(true, false, false, true, address(transfer10));
-        emit PaymentProcessed(user1, depositAmount, expectedJAPointMintAmount, expectedShopAmount);
+        emit PaymentProcessed(user1, depositAmount, expectedJAPointMintAmount, expectedFeeAmount, expectedShopAmount);
         transfer10.deposit(depositAmount);
         vm.stopPrank();
 
         // Check balances
         assertEq(japoint.balanceOf(user1), expectedJAPointMintAmount, "User1 should receive JAPoint");
-        assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount, "Shop should receive 99% JPYC");
-        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount, "Company should receive 1% JPYC");
+        assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount, "Shop should receive 98.9% JPYC");
+        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount + expectedFeeAmount, "Company should receive 1.1% JPYC");
         assertEq(jpyc.balanceOf(address(transfer10)), 0, "Transfer10 should not hold JPYC");
     }
 
@@ -301,11 +315,12 @@ contract Transfer10Test is Test {
 
         uint256 totalDeposit = firstDeposit + secondDeposit;
         uint256 expectedJAPointTotal = totalDeposit / 100; // 1%
-        uint256 expectedShopTotal = totalDeposit - expectedJAPointTotal; // 99%
+        uint256 expectedFeeTotal = totalDeposit / 1000; // 0.1%
+        uint256 expectedShopTotal = totalDeposit - expectedJAPointTotal - expectedFeeTotal; // 98.9%
 
         assertEq(japoint.balanceOf(user1), expectedJAPointTotal);
         assertEq(jpyc.balanceOf(shopAddress), expectedShopTotal);
-        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointTotal);
+        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointTotal + expectedFeeTotal);
     }
 
     function testDepositFailsWithZeroAmount() public {
@@ -328,27 +343,29 @@ contract Transfer10Test is Test {
         // Test the automatic processing feature via wrapper transfer
         uint256 transferAmount = 2000 * 10**18; // 2,000 JPYC
         uint256 expectedJAPointMintAmount = transferAmount / 100; // 1% = 20 JPYC
-        uint256 expectedShopAmount = transferAmount - expectedJAPointMintAmount; // 99% = 1,980 JPYC
+        uint256 expectedFeeAmount = transferAmount / 1000; // 0.1% = 2 JPYC
+        uint256 expectedShopAmount = transferAmount - expectedJAPointMintAmount - expectedFeeAmount; // 98.9% = 1,978 JPYC
 
         // User1 sends JPYC via wrapper (requires prior approval)
         vm.startPrank(user1);
         jpyc.approve(address(jpycWrapper), transferAmount);
         vm.expectEmit(true, false, false, true, address(transfer10));
-        emit PaymentProcessed(user1, transferAmount, expectedJAPointMintAmount, expectedShopAmount);
+        emit PaymentProcessed(user1, transferAmount, expectedJAPointMintAmount, expectedFeeAmount, expectedShopAmount);
         jpycWrapper.transfer(address(transfer10), transferAmount);
         vm.stopPrank();
 
         // Verify automatic processing happened
         assertEq(japoint.balanceOf(user1), expectedJAPointMintAmount, "User1 should receive JAPoint automatically");
-        assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount, "Shop should receive 99% JPYC");
-        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount, "Company should receive 1% JPYC");
+        assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount, "Shop should receive 98.9% JPYC");
+        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount + expectedFeeAmount, "Company should receive 1.1% JPYC");
         assertEq(jpyc.balanceOf(address(transfer10)), 0, "Transfer10 should not hold JPYC after processing");
     }
 
     function testAutomaticProcessingViaTransferWithPermit() public {
         uint256 transferAmount = 3000 * 10**18; // 3,000 JPYC
         uint256 expectedJAPointMintAmount = transferAmount / 100;
-        uint256 expectedShopAmount = transferAmount - expectedJAPointMintAmount;
+        uint256 expectedFeeAmount = transferAmount / 1000;
+        uint256 expectedShopAmount = transferAmount - expectedJAPointMintAmount - expectedFeeAmount;
         uint256 deadline = block.timestamp + 1 days;
         (uint8 v, bytes32 r, bytes32 s) = _signPermit(
             USER1_PRIVATE_KEY,
@@ -360,13 +377,13 @@ contract Transfer10Test is Test {
 
         vm.startPrank(user1);
         vm.expectEmit(true, false, false, true, address(transfer10));
-        emit PaymentProcessed(user1, transferAmount, expectedJAPointMintAmount, expectedShopAmount);
+        emit PaymentProcessed(user1, transferAmount, expectedJAPointMintAmount, expectedFeeAmount, expectedShopAmount);
         jpycWrapper.transferWithPermit(address(transfer10), transferAmount, deadline, v, r, s);
         vm.stopPrank();
 
         assertEq(japoint.balanceOf(user1), expectedJAPointMintAmount, "User1 should receive JAPoint automatically");
-        assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount, "Shop should receive 99% JPYC");
-        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount, "Company should receive 1% JPYC");
+        assertEq(jpyc.balanceOf(shopAddress), expectedShopAmount, "Shop should receive 98.9% JPYC");
+        assertEq(jpyc.balanceOf(companyAddress), expectedJAPointMintAmount + expectedFeeAmount, "Company should receive 1.1% JPYC");
         assertEq(jpyc.balanceOf(address(transfer10)), 0, "Transfer10 should not hold JPYC after processing");
     }
 
